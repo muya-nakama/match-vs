@@ -113,6 +113,46 @@
       line-height:1.6;
     }
 
+
+    .playerNameSetup{
+      margin:14px 0 18px;
+      padding:14px;
+      border-radius:14px;
+      background:#101720;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .playerNameSetupLabel{
+      color:var(--sub);
+      font-size:12px;
+      margin-bottom:7px;
+    }
+    .playerNameSetupRow{
+      display:flex;
+      gap:8px;
+    }
+    .playerNameSetupInput{
+      min-width:0;
+      flex:1;
+      padding:11px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#0b1016;
+      color:#fff;
+      font-size:15px;
+    }
+    .playerNameSetupSave{
+      width:auto;
+      margin-top:0;
+      padding:11px 14px;
+      white-space:nowrap;
+    }
+    .playerNameSetupStatus{
+      min-height:18px;
+      margin-top:7px;
+      color:var(--sub);
+      font-size:11px;
+    }
+
     .lobbySummary{
       display:flex;
       justify-content:space-between;
@@ -220,7 +260,7 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-name-sync-01</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-name-edit-01</div>
       <div class="sub">
         Firebase接続・6桁ルーム・6人ロビー・プレイヤー名同期・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
@@ -238,6 +278,15 @@
       <div class="row">
         <div class="label">UID</div>
         <div id="uid" class="value">—</div>
+      </div>
+
+      <div class="playerNameSetup">
+        <div class="playerNameSetupLabel">プレイヤーネーム</div>
+        <div class="playerNameSetupRow">
+          <input id="battlePlayerNameInput" class="playerNameSetupInput" maxlength="16" autocomplete="nickname" placeholder="名前を入力">
+          <button id="battlePlayerNameSave" class="playerNameSetupSave" type="button">保存</button>
+        </div>
+        <div id="battlePlayerNameStatus" class="playerNameSetupStatus"></div>
       </div>
 
       <button id="createRoomBtn" type="button" disabled>6桁の部屋を作る</button>
@@ -296,6 +345,9 @@
     const firebaseStatus = document.getElementById("firebaseStatus");
     const authStatus = document.getElementById("authStatus");
     const uidEl = document.getElementById("uid");
+    const battlePlayerNameInput = document.getElementById("battlePlayerNameInput");
+    const battlePlayerNameSave = document.getElementById("battlePlayerNameSave");
+    const battlePlayerNameStatus = document.getElementById("battlePlayerNameStatus");
     const createRoomBtn = document.getElementById("createRoomBtn");
     const joinRoomBtn = document.getElementById("joinRoomBtn");
     const joinCodeInput = document.getElementById("joinCodeInput");
@@ -330,8 +382,39 @@
     const PLAYER_NAME_KEY = "match3_ranking_name";
 
     function getLocalPlayerName() {
-      const saved = (localStorage.getItem(PLAYER_NAME_KEY) || "").trim().slice(0, 16);
-      return saved || "ゲスト";
+      return (localStorage.getItem(PLAYER_NAME_KEY) || "").trim().slice(0, 16);
+    }
+
+    function saveLocalPlayerName(name) {
+      const clean = String(name || "").trim().slice(0, 16);
+      if (clean) localStorage.setItem(PLAYER_NAME_KEY, clean);
+      else localStorage.removeItem(PLAYER_NAME_KEY);
+      return clean;
+    }
+
+    function syncBattlePlayerNameUI() {
+      const saved = getLocalPlayerName();
+      battlePlayerNameInput.value = saved;
+      battlePlayerNameStatus.textContent = saved
+        ? `保存済み: ${saved}`
+        : "プレイヤーネームを入力してください";
+      refreshEntryButtons();
+    }
+
+    function refreshEntryButtons() {
+      const hasName = !!getLocalPlayerName();
+      const authReady = !!currentUser;
+      createRoomBtn.disabled = !(hasName && authReady);
+      joinRoomBtn.disabled = !(hasName && authReady);
+    }
+
+    function saveBattlePlayerName() {
+      const clean = saveLocalPlayerName(battlePlayerNameInput.value);
+      battlePlayerNameStatus.textContent = clean
+        ? `「${clean}」で保存しました`
+        : "名前が未設定です";
+      refreshEntryButtons();
+      return clean;
     }
 
     function roomPlayerData(name, joinOrder) {
@@ -549,7 +632,7 @@
             startAt: null,
             nextJoinOrder: 1,
             players: {
-              [uid]: roomPlayerData(getLocalPlayerName(), 1)
+              [uid]: roomPlayerData(getLocalPlayerName() || "ゲスト", 1)
             }
           };
         });
@@ -560,7 +643,7 @@
           const hostSnap = await hostPlayerRef.once("value");
 
           if (!hostSnap.exists()) {
-            await hostPlayerRef.set(roomPlayerData(getLocalPlayerName(), 1));
+            await hostPlayerRef.set(roomPlayerData(getLocalPlayerName() || "ゲスト", 1));
           }
 
           // ホスト情報と入室順カウンタも念のため保証。
@@ -646,7 +729,7 @@
 
       // 4. 自分のプレイヤーデータだけを書き込む
       await roomRef.child("players/" + uid).set(
-        roomPlayerData(getLocalPlayerName(), newOrder)
+        roomPlayerData(getLocalPlayerName() || "ゲスト", newOrder)
       );
 
       return code;
@@ -727,8 +810,7 @@
       stopCountdown();
 
       joinCodeInput.value = "";
-      createRoomBtn.disabled = false;
-      joinRoomBtn.disabled = false;
+      refreshEntryButtons();
     }
 
     async function copyText(text) {
@@ -769,11 +851,26 @@
         authStatus.className = "value status ok";
         uidEl.textContent = user.uid;
 
-        createRoomBtn.disabled = false;
-        joinRoomBtn.disabled = false;
-        setMessage("準備完了。部屋を作るか、6桁番号を入力して参加してください。");
+        refreshEntryButtons();
+        setMessage("準備完了。名前を確認して、部屋を作るか6桁番号を入力して参加してください。");
+
+        battlePlayerNameSave.addEventListener("click", () => {
+          saveBattlePlayerName();
+        });
+
+        battlePlayerNameInput.addEventListener("keydown", e => {
+          if (e.key === "Enter") saveBattlePlayerName();
+        });
+
+        battlePlayerNameInput.addEventListener("input", () => {
+          battlePlayerNameStatus.textContent = "変更する場合は保存してください";
+        });
 
         createRoomBtn.addEventListener("click", async () => {
+          if (!getLocalPlayerName()) {
+            setMessage("プレイヤーネームを保存してから部屋を作ってください。");
+            return;
+          }
           createRoomBtn.disabled = true;
           joinRoomBtn.disabled = true;
           setMessage("部屋を作成しています…");
@@ -791,6 +888,10 @@
         });
 
         joinRoomBtn.addEventListener("click", async () => {
+          if (!getLocalPlayerName()) {
+            setMessage("プレイヤーネームを保存してから参加してください。");
+            return;
+          }
           const code = joinCodeInput.value.trim();
           createRoomBtn.disabled = true;
           joinRoomBtn.disabled = true;
@@ -895,6 +996,7 @@
       }
     }
 
+    syncBattlePlayerNameUI();
     start();
   </script>
 </body>
