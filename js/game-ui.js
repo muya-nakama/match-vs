@@ -53,3 +53,4 @@ updateTimer();
 updateChain();
 syncToggles();
 updateMissionUI();
+window.__monpatchGameReady=true;

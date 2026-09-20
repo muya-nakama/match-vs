@@ -94,8 +94,9 @@
     function refreshEntryButtons() {
       const hasName = !!getLocalPlayerName();
       const authReady = !!currentUser;
-      createRoomBtn.disabled = !(hasName && authReady);
-      joinRoomBtn.disabled = !(hasName && authReady);
+      const gameReady = !!battleFrameReady;
+      createRoomBtn.disabled = !(hasName && authReady && gameReady);
+      joinRoomBtn.disabled = !(hasName && authReady && gameReady);
     }
 
     function saveBattlePlayerName() {
@@ -118,4 +119,3 @@
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       };
     }
-

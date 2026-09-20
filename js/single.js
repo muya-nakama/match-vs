@@ -1,16 +1,59 @@
-    function loadBundledBattleGame() {
+    function setGameLoadGate(state, text) {
+      if (gameLoadGate) gameLoadGate.className = `gameLoadGate ${state}`.trim();
+      if (gameLoadGateText) gameLoadGateText.textContent = text;
+      if (gameReloadBtn) gameReloadBtn.hidden = state !== "failed";
+    }
+
+    function markGameLoadFailed(message="ゲーム本体の読み込みに失敗しました") {
+      battleFrameReady = false;
+      if (battleLoadTimer) clearTimeout(battleLoadTimer);
+      battleLoadTimer = null;
+      setGameLoadGate("failed", message);
+      if (battleLoadOverlay) battleLoadOverlay.textContent = message;
+      refreshEntryButtons();
+    }
+
+    function loadBundledBattleGame(isRetry=false) {
       if (!battleGameFrame) return;
+      battleFrameReady = false;
+      refreshEntryButtons();
+      setGameLoadGate("loading", isRetry
+        ? "ゲーム本体を再読み込みしています…"
+        : "ゲーム本体を読み込んでいます…");
+      if (battleLoadOverlay) battleLoadOverlay.textContent = "ゲームを準備しています…";
+      if (battleLoadTimer) clearTimeout(battleLoadTimer);
+
       try {
+        battleLoadAttempt++;
+        const suffix = isRetry ? `?retry=${battleLoadAttempt}` : "";
         // トップ表示中から裏で読み込み、シングル開始・対戦開始時の端末差を抑える。
-        battleGameFrame.src = "game.html";
+        battleGameFrame.src = `game.html${suffix}`;
+        battleLoadTimer = setTimeout(() => {
+          if (!battleFrameReady) markGameLoadFailed("ゲーム本体の読み込みが完了しませんでした");
+        }, 20000);
       } catch (e) {
         console.error("game load failed", e);
-        battleLoadOverlay.textContent = "ゲーム本体の読み込みに失敗しました";
+        markGameLoadFailed();
       }
     }
 
     battleGameFrame.addEventListener("load", () => {
+      let gameReady = false;
+      try {
+        gameReady = battleGameFrame.contentWindow?.__monpatchGameReady === true;
+      } catch (e) {
+        console.error("game ready check failed", e);
+      }
+      if (!gameReady) {
+        markGameLoadFailed();
+        return;
+      }
+
       battleFrameReady = true;
+      if (battleLoadTimer) clearTimeout(battleLoadTimer);
+      battleLoadTimer = null;
+      setGameLoadGate("ready", "ゲーム本体の準備完了");
+      refreshEntryButtons();
 
       if (gameMode === "single") {
         configureFrameForSingleMode();
@@ -22,6 +65,9 @@
 
       if (battleLoadOverlay) battleLoadOverlay.textContent = "ゲーム準備完了";
     });
+
+    battleGameFrame.addEventListener("error", () => markGameLoadFailed());
+    gameReloadBtn?.addEventListener("click", () => loadBundledBattleGame(true));
 
 
     function configureFrameForSingleMode() {
