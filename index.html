@@ -453,19 +453,14 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: battle-integrated-01</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: battle-public-ui-01</div>
       <div class="sub">
-        Firebase接続・6桁ルーム・6人ロビー・プレイヤー名同期・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
+        6桁ルームで最大6人まで遊べるオンライン対戦版です。
       </div>
 
       <div class="row">
-        <div class="label">Firebase</div>
-        <div id="firebaseStatus" class="value status warn">初期化中…</div>
-      </div>
-
-      <div class="row">
-        <div class="label">匿名ログイン</div>
-        <div id="authStatus" class="value status warn">待機中…</div>
+        <div class="label">オンライン状態</div>
+        <div id="onlineStatus" class="value status warn">接続中…</div>
       </div>
 
       <div class="row">
@@ -568,10 +563,8 @@
       messagingSenderId: "980764398973",
       appId: "1:980764398973:web:1db93bb561942e6fa52814"
     };
-
-    const firebaseStatus = document.getElementById("firebaseStatus");
-    const authStatus = document.getElementById("authStatus");
-    const uidEl = document.getElementById("uid");
+    const onlineStatus = document.getElementById("onlineStatus");
+const uidEl = document.getElementById("uid");
     const battlePlayerNameInput = document.getElementById("battlePlayerNameInput");
     const battlePlayerNameSave = document.getElementById("battlePlayerNameSave");
     const battlePlayerNameStatus = document.getElementById("battlePlayerNameStatus");
@@ -1647,22 +1640,19 @@
     async function start() {
       try {
         firebase.initializeApp(firebaseConfig);
-        firebaseStatus.textContent = "接続設定 OK";
-        firebaseStatus.className = "value status ok";
+        onlineStatus.textContent = "接続中…";
+        onlineStatus.className = "value status warn";
 
         firebase.database().ref(".info/serverTimeOffset").on("value", snap => {
           serverTimeOffset = Number(snap.val()) || 0;
         });
 
-        authStatus.textContent = "匿名ログイン中…";
-        authStatus.className = "value status warn";
-
         const credential = await firebase.auth().signInAnonymously();
         const user = credential.user;
         currentUser = user;
 
-        authStatus.textContent = "匿名ログイン成功";
-        authStatus.className = "value status ok";
+        onlineStatus.textContent = "オンライン";
+        onlineStatus.className = "value status ok";
         uidEl.textContent = user.uid;
 
         refreshEntryButtons();
@@ -1836,11 +1826,9 @@
 
       } catch (err) {
         console.error(err);
-        firebaseStatus.textContent = "エラー";
-        firebaseStatus.className = "value status bad";
-        authStatus.textContent = "失敗";
-        authStatus.className = "value status bad";
-        setMessage("Firebase初期化または匿名ログインに失敗しました: " + (err && err.message ? err.message : err));
+        onlineStatus.textContent = "接続エラー";
+        onlineStatus.className = "value status bad";
+        setMessage("オンライン接続に失敗しました: " + (err && err.message ? err.message : err));
       }
     }
 
@@ -1850,4 +1838,8 @@
     start();
   </script>
 </body>
-</html>
+</html><div class="statusItem">
+          <div class="label">オンライン状態</div>
+          <div id="onlineStatus" class="value status warn">接続中…</div>
+        </div>
+        
