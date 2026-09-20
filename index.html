@@ -109,6 +109,103 @@
       font-size:13px;
       line-height:1.6;
     }
+
+    .lobbySummary{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+      color:var(--sub);
+      font-size:13px;
+    }
+    .readyCount{
+      font-weight:900;
+      color:var(--text);
+    }
+    .playerGrid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px 10px;
+      margin-top:12px;
+    }
+    .playerSlot{
+      min-width:0;
+      text-align:center;
+    }
+    .avatarWrap{
+      position:relative;
+      width:74px;
+      height:74px;
+      margin:0 auto 8px;
+    }
+    .avatarCircle{
+      width:74px;
+      height:74px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#17202b;
+      border:2px solid rgba(255,255,255,.12);
+      font-size:24px;
+      font-weight:1000;
+      letter-spacing:.02em;
+      overflow:hidden;
+    }
+    .avatarCircle.empty{
+      opacity:.28;
+      border-style:dashed;
+      font-size:18px;
+      color:var(--sub);
+    }
+    .hostFlag{
+      position:absolute;
+      left:-2px;
+      top:-2px;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#14384a;
+      color:#74d4ff;
+      font-size:14px;
+      border:2px solid var(--panel);
+      box-shadow:0 2px 8px rgba(0,0,0,.35);
+    }
+    .readyCheck{
+      position:absolute;
+      right:-2px;
+      bottom:-2px;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#1c7f49;
+      color:#fff;
+      font-size:15px;
+      font-weight:1000;
+      border:2px solid var(--panel);
+      box-shadow:0 2px 8px rgba(0,0,0,.35);
+    }
+    .playerName{
+      font-size:13px;
+      font-weight:900;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .playerMe{
+      color:var(--sub);
+      font-size:11px;
+      margin-top:2px;
+      min-height:15px;
+    }
+
     code{
       background:#0b1016;
       border-radius:6px;
@@ -121,7 +218,7 @@
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
       <div class="sub">
-        Firebase接続・6桁ルーム・6人ロビー・準備・開始直前・退出／ホスト引き継ぎ・別ブラウザ参加を確認するテストページです。
+        Firebase接続・6桁ルーム・6人ロビー・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
 
       <div class="row">
@@ -200,6 +297,7 @@
     const copyRoomBtn = document.getElementById("copyRoomBtn");
     const playersBox = document.getElementById("playersBox");
     const playersList = document.getElementById("playersList");
+    const readyCount = document.getElementById("readyCount");
     const readyBtn = document.getElementById("readyBtn");
     const startBattleBtn = document.getElementById("startBattleBtn");
     const leaveRoomBtn = document.getElementById("leaveRoomBtn");
@@ -239,12 +337,28 @@
 
     function allPlayersReady(room) {
       if (!room || !room.players) return false;
-      const players = Object.values(room.players);
-      return players.length >= 2 && players.every(p => p && p.ready === true);
+      const entries = Object.entries(room.players);
+      if (entries.length < 2) return false;
+
+      return entries.every(([uid, p]) => {
+        if (uid === room.hostUid) return true;
+        return !!(p && p.ready === true);
+      });
     }
 
     function isHost(room) {
       return !!(room && currentUser && room.hostUid === currentUser.uid);
+    }
+
+    function displayName(name) {
+      const text = String(name || "Player");
+      const chars = Array.from(text);
+      return chars.length <= 5 ? text : chars.slice(0, 4).join("") + "…";
+    }
+
+    function avatarText(name) {
+      const chars = Array.from(String(name || "?"));
+      return chars.slice(0, 2).join("");
     }
 
     function renderPlayers(room) {
@@ -255,16 +369,44 @@
         return ao - bo;
       });
 
-      playersList.innerHTML = entries.length
-        ? entries.map(([uid, p], i) => {
-            const hostMark = room.hostUid === uid ? " 👑" : "";
-            const meMark = currentUser && currentUser.uid === uid ? "（自分）" : "";
-            const readyMark = p && p.ready ? "✅ 準備完了" : "⏳ 待機中";
-            const label = p && p.name ? p.name : "Player";
-            return `<div style="margin:8px 0">${i + 1}. ${label}${hostMark} ${meMark}<br><span style="font-size:13px;color:#aeb8c5">${readyMark}</span></div>`;
-          }).join("")
-        : "—";
+      const readyTotal = entries.filter(([uid, p]) => uid === room.hostUid || (p && p.ready === true)).length;
+      readyCount.textContent = `準備完了 ${readyTotal}/${entries.length}`;
 
+      const slots = [];
+
+      entries.slice(0, 6).forEach(([uid, p]) => {
+        const rawName = p && p.name ? p.name : "Player";
+        const shownName = displayName(rawName);
+        const hostBadge = room.hostUid === uid ? '<span class="hostFlag" title="ホスト">⚑</span>' : '';
+        const readyBadge = p && p.ready ? '<span class="readyCheck" title="準備完了">✓</span>' : '';
+        const meLabel = currentUser && currentUser.uid === uid ? '自分' : '&nbsp;';
+
+        slots.push(`
+          <div class="playerSlot">
+            <div class="avatarWrap">
+              <div class="avatarCircle">${avatarText(rawName)}</div>
+              ${hostBadge}
+              ${readyBadge}
+            </div>
+            <div class="playerName">${shownName}</div>
+            <div class="playerMe">${meLabel}</div>
+          </div>
+        `);
+      });
+
+      for (let i = slots.length; i < 6; i++) {
+        slots.push(`
+          <div class="playerSlot">
+            <div class="avatarWrap">
+              <div class="avatarCircle empty">＋</div>
+            </div>
+            <div class="playerName">&nbsp;</div>
+            <div class="playerMe">&nbsp;</div>
+          </div>
+        `);
+      }
+
+      playersList.innerHTML = slots.join("");
       playersBox.style.display = "block";
     }
 
@@ -273,28 +415,34 @@
 
       const me = room.players && room.players[currentUser.uid];
       const waiting = room.status === "waiting";
-
-      readyBtn.style.display = "block";
-      readyBtn.disabled = !me || !waiting;
-      readyBtn.textContent = me && me.ready ? "準備完了を解除" : "準備完了にする";
+      const total = playerCount(room);
+      const readyTotal = room.players
+        ? Object.entries(room.players).filter(([uid, p]) => uid === room.hostUid || (p && p.ready === true)).length
+        : 0;
 
       leaveRoomBtn.style.display = "block";
       leaveRoomBtn.disabled = !me;
+      leaveRoomBtn.textContent = "ゲーム終了";
 
       if (isHost(room)) {
-        startBattleBtn.style.display = "block";
-        const canStart = waiting && playerCount(room) >= 2 && playerCount(room) <= 6 && allPlayersReady(room);
-        startBattleBtn.disabled = !canStart;
+        readyBtn.style.display = "none";
 
-        if (playerCount(room) < 2) {
-          startBattleBtn.textContent = "対戦開始（2人以上必要）";
-        } else if (!allPlayersReady(room)) {
-          startBattleBtn.textContent = "対戦開始（全員の準備待ち）";
-        } else {
-          startBattleBtn.textContent = "対戦開始";
-        }
+        startBattleBtn.style.display = "block";
+        startBattleBtn.textContent = `開始（${readyTotal}/${total}）`;
+
+        const canStart =
+          waiting &&
+          total >= 2 &&
+          total <= 6 &&
+          readyTotal === total;
+
+        startBattleBtn.disabled = !canStart;
       } else {
         startBattleBtn.style.display = "none";
+
+        readyBtn.style.display = "block";
+        readyBtn.disabled = !me || !waiting;
+        readyBtn.textContent = me && me.ready ? "準備解除" : "準備";
       }
     }
 
@@ -533,7 +681,8 @@
       roomCodeEl.textContent = "------";
       roomBox.classList.remove("show");
 
-      playersList.textContent = "—";
+      playersList.innerHTML = "";
+      readyCount.textContent = "準備完了 0/0";
       playersBox.style.display = "none";
 
       readyBtn.style.display = "none";
