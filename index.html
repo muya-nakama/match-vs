@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Match-3 Battle Firebase Test</title>
   <style>
     :root{
@@ -217,6 +220,7 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-ui-fix-01</div>
       <div class="sub">
         Firebase接続・6桁ルーム・6人ロビー・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
@@ -253,13 +257,16 @@
       </div>
 
       <div id="playersBox" class="row" style="display:none;margin-top:18px">
-        <div class="label">参加者（2〜6人）</div>
-        <div id="playersList" class="value">—</div>
+        <div class="lobbySummary">
+          <span>参加者</span>
+          <span id="readyCount" class="readyCount">準備完了 0/0</span>
+        </div>
+        <div id="playersList" class="playerGrid"></div>
       </div>
 
-      <button id="readyBtn" type="button" disabled style="display:none">準備完了にする</button>
-      <button id="startBattleBtn" type="button" disabled style="display:none">対戦開始</button>
-      <button id="leaveRoomBtn" type="button" disabled style="display:none">ゲーム終了（退出）</button>
+      <button id="readyBtn" type="button" disabled style="display:none">準備</button>
+      <button id="startBattleBtn" type="button" disabled style="display:none">開始（0/0）</button>
+      <button id="leaveRoomBtn" type="button" disabled style="display:none">ゲーム終了</button>
 
       <div id="countdownBox" class="room" style="margin-top:18px">
         <div class="roomLabel">開始カウントダウン</div>
