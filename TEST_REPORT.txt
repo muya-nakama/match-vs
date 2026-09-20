@@ -1,0 +1,24 @@
+モンパッチ Ver.2.59 分割試作版 検証記録
+
+実施済み:
+- 全JavaScriptファイルを node --check で個別構文確認
+- index側5ファイルを読込順に結合して構文確認
+- game側3ファイルを読込順に結合して構文確認
+- index.html / game.html / 全JavaScriptをローカルHTTP経由で取得確認
+- tutorialSpawnPlan / tutorialBuildSpawnPlan が tutorial.js に保持されていることを確認
+- 削除済み multiTopBackBtn の参照がないことを確認
+- 巨大なbattleGameSource埋め込みを除去し、game.htmlの先読みへ変更
+
+未実施:
+- Android / iPhone実機操作
+- Firebase匿名認証の実通信
+- 複数端末マルチ対戦
+- ランキングAPIへの登録
+- BGM / SEの実再生
+
+次段階:
+1. match-vsへ試験配置
+2. トップ、プロフィール、シングル、チュートリアルを実機確認
+3. 2台以上で現行マルチ挙動を確認
+4. 全員ゲームロード完了判定を追加
+5. 再度複数端末テスト後にmatch3へ移植
