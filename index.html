@@ -114,6 +114,67 @@
     }
 
 
+
+    .avatarSetup{
+      margin:0 0 18px;
+      padding:14px;
+      border-radius:14px;
+      background:#101720;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .avatarSetupLabel{
+      color:var(--sub);
+      font-size:12px;
+      margin-bottom:9px;
+    }
+    .avatarSetupRow{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .avatarPreview{
+      width:64px;
+      height:64px;
+      border-radius:50%;
+      background:#17202b;
+      border:2px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 auto;
+      color:var(--sub);
+      font-weight:900;
+    }
+    .avatarPreview img,
+    .avatarCircle img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .avatarSetupActions{
+      min-width:0;
+      flex:1;
+    }
+    .avatarFileInput{
+      width:100%;
+      color:var(--sub);
+      font-size:12px;
+    }
+    .avatarRemoveBtn{
+      width:auto;
+      margin-top:8px;
+      padding:8px 11px;
+      font-size:12px;
+    }
+    .avatarStatus{
+      min-height:17px;
+      margin-top:7px;
+      color:var(--sub);
+      font-size:11px;
+    }
+
     .playerNameSetup{
       margin:14px 0 18px;
       padding:14px;
@@ -260,7 +321,7 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-name-edit-01</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-avatar-upload-01</div>
       <div class="sub">
         Firebase接続・6桁ルーム・6人ロビー・プレイヤー名同期・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
@@ -287,6 +348,18 @@
           <button id="battlePlayerNameSave" class="playerNameSetupSave" type="button">保存</button>
         </div>
         <div id="battlePlayerNameStatus" class="playerNameSetupStatus"></div>
+      </div>
+
+      <div class="avatarSetup">
+        <div class="avatarSetupLabel">プレイヤーアイコン</div>
+        <div class="avatarSetupRow">
+          <div id="battleAvatarPreview" class="avatarPreview">未設定</div>
+          <div class="avatarSetupActions">
+            <input id="battleAvatarInput" class="avatarFileInput" type="file" accept="image/*">
+            <button id="battleAvatarRemove" class="avatarRemoveBtn" type="button">画像を解除</button>
+          </div>
+        </div>
+        <div id="battleAvatarStatus" class="avatarStatus">未設定時は名前の先頭2文字を表示します</div>
       </div>
 
       <button id="createRoomBtn" type="button" disabled>6桁の部屋を作る</button>
@@ -348,6 +421,10 @@
     const battlePlayerNameInput = document.getElementById("battlePlayerNameInput");
     const battlePlayerNameSave = document.getElementById("battlePlayerNameSave");
     const battlePlayerNameStatus = document.getElementById("battlePlayerNameStatus");
+    const battleAvatarInput = document.getElementById("battleAvatarInput");
+    const battleAvatarPreview = document.getElementById("battleAvatarPreview");
+    const battleAvatarRemove = document.getElementById("battleAvatarRemove");
+    const battleAvatarStatus = document.getElementById("battleAvatarStatus");
     const createRoomBtn = document.getElementById("createRoomBtn");
     const joinRoomBtn = document.getElementById("joinRoomBtn");
     const joinCodeInput = document.getElementById("joinCodeInput");
@@ -380,6 +457,77 @@
     }
 
     const PLAYER_NAME_KEY = "match3_ranking_name";
+    const PLAYER_AVATAR_KEY = "match3_profile_avatar";
+
+    function getLocalAvatar() {
+      return localStorage.getItem(PLAYER_AVATAR_KEY) || "";
+    }
+
+    function setLocalAvatar(dataUrl) {
+      if (dataUrl) localStorage.setItem(PLAYER_AVATAR_KEY, dataUrl);
+      else localStorage.removeItem(PLAYER_AVATAR_KEY);
+      syncAvatarUI();
+    }
+
+    function syncAvatarUI() {
+      const dataUrl = getLocalAvatar();
+      if (dataUrl) {
+        battleAvatarPreview.innerHTML = `<img src="${dataUrl}" alt="プレイヤーアイコン">`;
+        battleAvatarStatus.textContent = "保存済みの画像を使用します";
+      } else {
+        battleAvatarPreview.textContent = "未設定";
+        battleAvatarStatus.textContent = "未設定時は名前の先頭2文字を表示します";
+      }
+    }
+
+    function loadImageFromFile(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("画像を読み込めませんでした。"));
+        };
+        img.src = url;
+      });
+    }
+
+    async function makeAvatarDataUrl(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        throw new Error("画像ファイルを選択してください。");
+      }
+
+      const img = await loadImageFromFile(file);
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = Math.floor((img.naturalWidth - side) / 2);
+      const sy = Math.floor((img.naturalHeight - side) / 2);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 128;
+      canvas.height = 128;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, 128, 128);
+
+      let dataUrl = canvas.toDataURL("image/webp", 0.72);
+
+      // 目安として約60KBを超えた場合はJPEGへ落としてさらに圧縮。
+      if (dataUrl.length > 80000) {
+        dataUrl = canvas.toDataURL("image/jpeg", 0.62);
+      }
+
+      if (dataUrl.length > 100000) {
+        throw new Error("画像を十分に小さくできませんでした。別の画像を選んでください。");
+      }
+
+      return dataUrl;
+    }
+
+
 
     function getLocalPlayerName() {
       return (localStorage.getItem(PLAYER_NAME_KEY) || "").trim().slice(0, 16);
@@ -420,6 +568,7 @@
     function roomPlayerData(name, joinOrder) {
       return {
         name,
+        avatarData: getLocalAvatar() || "",
         ready: false,
         connected: true,
         score: 0,
@@ -481,7 +630,9 @@
         slots.push(`
           <div class="playerSlot">
             <div class="avatarWrap">
-              <div class="avatarCircle">${avatarText(rawName)}</div>
+              <div class="avatarCircle">${p && p.avatarData
+                ? `<img src="${p.avatarData}" alt="${shownName}">`
+                : avatarText(rawName)}</div>
               ${hostBadge}
               ${readyBadge}
             </div>
@@ -854,6 +1005,29 @@
         refreshEntryButtons();
         setMessage("準備完了。名前を確認して、部屋を作るか6桁番号を入力して参加してください。");
 
+        battleAvatarInput.addEventListener("change", async () => {
+          const file = battleAvatarInput.files && battleAvatarInput.files[0];
+          if (!file) return;
+
+          battleAvatarStatus.textContent = "画像を処理しています…";
+
+          try {
+            const dataUrl = await makeAvatarDataUrl(file);
+            setLocalAvatar(dataUrl);
+            battleAvatarStatus.textContent = "アイコン画像を保存しました";
+          } catch (err) {
+            console.error(err);
+            battleAvatarStatus.textContent = err && err.message ? err.message : "画像の処理に失敗しました";
+          } finally {
+            battleAvatarInput.value = "";
+          }
+        });
+
+        battleAvatarRemove.addEventListener("click", () => {
+          setLocalAvatar("");
+          battleAvatarStatus.textContent = "画像を解除しました";
+        });
+
         battlePlayerNameSave.addEventListener("click", () => {
           saveBattlePlayerName();
         });
@@ -997,6 +1171,7 @@
     }
 
     syncBattlePlayerNameUI();
+    syncAvatarUI();
     start();
   </script>
 </body>
