@@ -122,6 +122,8 @@ const uidEl = document.getElementById("uid");
     let finalScoreSubmitted = false;
     let lastSyncedScore = -1;
     let resultsShownForRound = false;
+    let battleDisconnectRef = null;
+    let battleDisconnectArmedFor = "";
     const BATTLE_MINUTES = 3;
     const SCORE_SYNC_MS = 700;
 

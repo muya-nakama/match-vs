@@ -17,6 +17,34 @@
       });
     }
 
+    async function armBattleDisconnect(code=currentRoomCode) {
+      if (!code || !currentUser) return;
+      const key = `${code}/${currentUser.uid}`;
+      if (battleDisconnectArmedFor === key) return;
+
+      if (battleDisconnectRef) {
+        try { await battleDisconnectRef.onDisconnect().cancel(); } catch (e) {}
+      }
+
+      battleDisconnectRef = firebase.database().ref(`rooms/${code}/players/${currentUser.uid}`);
+      await battleDisconnectRef.onDisconnect().update({
+        forfeited: true,
+        finished: true,
+        score: -1,
+        finalScore: -1,
+        disconnectedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      battleDisconnectArmedFor = key;
+    }
+
+    async function cancelBattleDisconnect() {
+      if (battleDisconnectRef) {
+        try { await battleDisconnectRef.onDisconnect().cancel(); } catch (e) {}
+      }
+      battleDisconnectRef = null;
+      battleDisconnectArmedFor = "";
+    }
+
     function isHost(room) {
       return !!(room && currentUser && room.hostUid === currentUser.uid);
     }
@@ -395,6 +423,9 @@
           if (ps.length < 2 || !ps.every(([,p]) => p && p.finished === true)) return;
 
           const sorted = ps.slice().sort((a,b) => {
+            const ar = a[1]?.forfeited === true;
+            const br = b[1]?.forfeited === true;
+            if (ar !== br) return ar ? 1 : -1;
             const ds = Number(b[1]?.finalScore || b[1]?.score || 0) - Number(a[1]?.finalScore || a[1]?.score || 0);
             if (ds) return ds;
             return (Number(a[1]?.joinOrder)||9999) - (Number(b[1]?.joinOrder)||9999);
@@ -411,6 +442,7 @@
             results[uid] = {
               rank,
               score,
+              forfeited: p?.forfeited === true,
               name: p?.name || "Player",
               avatarData: p?.avatarData || ""
             };
@@ -448,7 +480,7 @@
           <div class="battleResultRank">${Number(r?.rank)||"-"}位</div>
           <div class="battleResultAvatar">${av}</div>
           <div class="battleResultName">${displayName(raw)}${uid===currentUser?.uid ? "（自分）" : ""}</div>
-          <div class="battleResultScore">${Number(r?.score||0).toLocaleString("ja-JP")}</div>
+          <div class="battleResultScore">${r?.forfeited ? "リタイア" : Number(r?.score||0).toLocaleString("ja-JP")}</div>
         </div>`;
       }).join("");
 
@@ -639,8 +671,10 @@
         renderBattleHud(room);
 
         if (room.status === "countdown" && Number(room.startAt)) {
+          armBattleDisconnect(code).catch(e => console.error("disconnect guard failed", e));
           runCountdown(Number(room.startAt));
         } else if (room.status === "playing") {
+          armBattleDisconnect(code).catch(e => console.error("disconnect guard failed", e));
           stopCountdown();
           enterBattleGame(Number(room.startAt) || Date.now() + serverTimeOffset);
           maybeFinalizeResults(room);
@@ -793,9 +827,11 @@
     }
 
     async function leaveRoom(code, uid) {
+      await cancelBattleDisconnect();
       const roomRef = firebase.database().ref("rooms/" + code);
       let roomDeleted = false;
       let newHostUid = null;
+      let forfeited = false;
 
       const result = await roomRef.transaction(room => {
         if (room === null) {
@@ -806,6 +842,16 @@
         room.players = room.players || {};
 
         if (!room.players[uid]) {
+          return room;
+        }
+
+        if (room.status === "countdown" || room.status === "playing") {
+          room.players[uid].forfeited = true;
+          room.players[uid].finished = true;
+          room.players[uid].score = -1;
+          room.players[uid].finalScore = -1;
+          room.players[uid].disconnectedAt = Date.now() + serverTimeOffset;
+          forfeited = true;
           return room;
         }
 
@@ -836,10 +882,11 @@
         throw new Error("退出処理に失敗しました。");
       }
 
-      return { roomDeleted, newHostUid };
+      return { roomDeleted, newHostUid, forfeited };
     }
 
     function resetLobbyUI() {
+      cancelBattleDisconnect();
       joinRoomArea?.classList.remove("hiddenByRoom");
       if (currentRoomRef) {
         currentRoomRef.off();
