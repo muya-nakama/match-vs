@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Match-3 Battle Firebase Test</title>
+  <style>
+    :root{
+      --bg:#10141a;
+      --panel:#1a212b;
+      --text:#f5f7fa;
+      --sub:#aeb8c5;
+      --ok:#62d394;
+      --warn:#ffd166;
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .app{
+      width:min(100%,520px);
+      padding:24px 16px 48px;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 14px 40px rgba(0,0,0,.28);
+    }
+    h1{
+      margin:0 0 8px;
+      font-size:22px;
+    }
+    .sub{
+      color:var(--sub);
+      font-size:13px;
+      line-height:1.7;
+      margin-bottom:18px;
+    }
+    .row{
+      background:#101720;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      padding:12px;
+      margin:10px 0;
+    }
+    .label{
+      color:var(--sub);
+      font-size:12px;
+      margin-bottom:5px;
+    }
+    .value{
+      font-weight:800;
+      word-break:break-all;
+    }
+    .status.ok{color:var(--ok)}
+    .status.warn{color:var(--warn)}
+    .status.bad{color:var(--danger)}
+    button{
+      width:100%;
+      margin-top:14px;
+      padding:14px 16px;
+      border:0;
+      border-radius:13px;
+      background:#f2f5f8;
+      color:#17202a;
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    button:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+    .room{
+      margin-top:18px;
+      padding:18px 12px;
+      text-align:center;
+      border-radius:16px;
+      background:#0d131b;
+      border:1px solid rgba(255,255,255,.1);
+      display:none;
+    }
+    .room.show{display:block}
+    .roomLabel{
+      color:var(--sub);
+      font-size:12px;
+      margin-bottom:4px;
+    }
+    .roomCode{
+      font-size:42px;
+      font-weight:1000;
+      letter-spacing:.16em;
+      padding-left:.16em;
+    }
+    .message{
+      margin-top:14px;
+      min-height:24px;
+      color:var(--sub);
+      font-size:13px;
+      line-height:1.6;
+    }
+    code{
+      background:#0b1016;
+      border-radius:6px;
+      padding:2px 5px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <h1>Match-3 Battle 接続テスト</h1>
+      <div class="sub">
+        Firebaseへの接続、匿名ログイン、6桁ルーム作成だけを確認するテストページです。
+      </div>
+
+      <div class="row">
+        <div class="label">Firebase</div>
+        <div id="firebaseStatus" class="value status warn">初期化中…</div>
+      </div>
+
+      <div class="row">
+        <div class="label">匿名ログイン</div>
+        <div id="authStatus" class="value status warn">待機中…</div>
+      </div>
+
+      <div class="row">
+        <div class="label">UID</div>
+        <div id="uid" class="value">—</div>
+      </div>
+
+      <button id="createRoomBtn" type="button" disabled>6桁の部屋を作る</button>
+
+      <div id="roomBox" class="room">
+        <div class="roomLabel">作成した部屋番号</div>
+        <div id="roomCode" class="roomCode">------</div>
+      </div>
+
+      <div id="message" class="message"></div>
+    </section>
+  </main>
+
+  <!-- Firebase SDK（互換版。単体HTMLで扱いやすい方式） -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6zij-aWSCb7k8C-DrrcbBcQ0mO3bHl-M",
+      authDomain: "match3-battle-53092.firebaseapp.com",
+      databaseURL: "https://match3-battle-53092-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "match3-battle-53092",
+      storageBucket: "match3-battle-53092.firebasestorage.app",
+      messagingSenderId: "980764398973",
+      appId: "1:980764398973:web:1db93bb561942e6fa52814"
+    };
+
+    const firebaseStatus = document.getElementById("firebaseStatus");
+    const authStatus = document.getElementById("authStatus");
+    const uidEl = document.getElementById("uid");
+    const createRoomBtn = document.getElementById("createRoomBtn");
+    const roomBox = document.getElementById("roomBox");
+    const roomCodeEl = document.getElementById("roomCode");
+    const messageEl = document.getElementById("message");
+
+    function setMessage(text) {
+      messageEl.textContent = text;
+    }
+
+    function randomRoomCode() {
+      return String(Math.floor(100000 + Math.random() * 900000));
+    }
+
+    async function createUniqueRoom(uid) {
+      const db = firebase.database();
+
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const code = randomRoomCode();
+        const roomRef = db.ref("rooms/" + code);
+
+        const result = await roomRef.transaction(current => {
+          if (current !== null) return;
+
+          return {
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            status: "waiting",
+            hostUid: uid,
+            players: {
+              [uid]: {
+                name: "TEST",
+                ready: false,
+                connected: true,
+                score: 0,
+                joinedAt: firebase.database.ServerValue.TIMESTAMP
+              }
+            }
+          };
+        });
+
+        if (result.committed) {
+          return code;
+        }
+      }
+
+      throw new Error("空いている部屋番号を作成できませんでした。");
+    }
+
+    async function start() {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        firebaseStatus.textContent = "接続設定 OK";
+        firebaseStatus.className = "value status ok";
+
+        authStatus.textContent = "匿名ログイン中…";
+        authStatus.className = "value status warn";
+
+        const credential = await firebase.auth().signInAnonymously();
+        const user = credential.user;
+
+        authStatus.textContent = "匿名ログイン成功";
+        authStatus.className = "value status ok";
+        uidEl.textContent = user.uid;
+
+        createRoomBtn.disabled = false;
+        setMessage("準備完了。「6桁の部屋を作る」を押してください。");
+
+        createRoomBtn.addEventListener("click", async () => {
+          createRoomBtn.disabled = true;
+          roomBox.classList.remove("show");
+          setMessage("部屋を作成しています…");
+
+          try {
+            const code = await createUniqueRoom(user.uid);
+            roomCodeEl.textContent = code;
+            roomBox.classList.add("show");
+            setMessage("Firebase Realtime Database に rooms/" + code + " を作成しました。");
+          } catch (err) {
+            console.error(err);
+            setMessage("部屋作成に失敗しました: " + (err && err.message ? err.message : err));
+          } finally {
+            createRoomBtn.disabled = false;
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        firebaseStatus.textContent = "エラー";
+        firebaseStatus.className = "value status bad";
+        authStatus.textContent = "失敗";
+        authStatus.className = "value status bad";
+        setMessage("Firebase初期化または匿名ログインに失敗しました: " + (err && err.message ? err.message : err));
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
