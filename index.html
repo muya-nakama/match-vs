@@ -121,7 +121,7 @@
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
       <div class="sub">
-        Firebaseへの接続、匿名ログイン、6桁ルーム作成だけを確認するテストページです。
+        Firebase接続・6桁ルーム・6人ロビー・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
 
       <div class="row">
@@ -162,6 +162,7 @@
 
       <button id="readyBtn" type="button" disabled style="display:none">準備完了にする</button>
       <button id="startBattleBtn" type="button" disabled style="display:none">対戦開始</button>
+      <button id="leaveRoomBtn" type="button" disabled style="display:none">ゲーム終了（退出）</button>
 
       <div id="countdownBox" class="room" style="margin-top:18px">
         <div class="roomLabel">開始カウントダウン</div>
@@ -201,6 +202,7 @@
     const playersList = document.getElementById("playersList");
     const readyBtn = document.getElementById("readyBtn");
     const startBattleBtn = document.getElementById("startBattleBtn");
+    const leaveRoomBtn = document.getElementById("leaveRoomBtn");
     const countdownBox = document.getElementById("countdownBox");
     const countdownText = document.getElementById("countdownText");
     const messageEl = document.getElementById("message");
@@ -220,12 +222,13 @@
       return String(Math.floor(100000 + Math.random() * 900000));
     }
 
-    function roomPlayerData(name) {
+    function roomPlayerData(name, joinOrder) {
       return {
         name,
         ready: false,
         connected: true,
         score: 0,
+        joinOrder,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       };
     }
@@ -246,7 +249,11 @@
 
     function renderPlayers(room) {
       const players = (room && room.players) || {};
-      const entries = Object.entries(players);
+      const entries = Object.entries(players).sort((a, b) => {
+        const ao = Number(a[1] && a[1].joinOrder) || Number.MAX_SAFE_INTEGER;
+        const bo = Number(b[1] && b[1].joinOrder) || Number.MAX_SAFE_INTEGER;
+        return ao - bo;
+      });
 
       playersList.innerHTML = entries.length
         ? entries.map(([uid, p], i) => {
@@ -270,6 +277,9 @@
       readyBtn.style.display = "block";
       readyBtn.disabled = !me || !waiting;
       readyBtn.textContent = me && me.ready ? "準備完了を解除" : "準備完了にする";
+
+      leaveRoomBtn.style.display = "block";
+      leaveRoomBtn.disabled = !me;
 
       if (isHost(room)) {
         startBattleBtn.style.display = "block";
@@ -355,6 +365,7 @@
       roomCodeEl.textContent = code;
       roomBox.classList.add("show");
       readyBtn.style.display = "block";
+      leaveRoomBtn.style.display = "block";
       watchRoom(code);
       setMessage(message);
     }
@@ -374,8 +385,9 @@
             status: "waiting",
             hostUid: uid,
             startAt: null,
+            nextJoinOrder: 1,
             players: {
-              [uid]: roomPlayerData("HOST")
+              [uid]: roomPlayerData("HOST", 1)
             }
           };
         });
@@ -392,22 +404,126 @@
       }
 
       const roomRef = firebase.database().ref("rooms/" + code);
-      const snap = await roomRef.once("value");
+      let failureReason = "";
 
-      if (!snap.exists()) throw new Error("その部屋は見つかりません。");
+      const result = await roomRef.transaction(room => {
+        if (room === null) {
+          failureReason = "その部屋は見つかりません。";
+          return;
+        }
 
-      const room = snap.val();
-      if (room.status !== "waiting") {
-        throw new Error("その部屋は参加受付中ではありません。");
+        if (room.status !== "waiting") {
+          failureReason = "その部屋は参加受付中ではありません。";
+          return;
+        }
+
+        room.players = room.players || {};
+
+        if (room.players[uid]) {
+          return room;
+        }
+
+        if (Object.keys(room.players).length >= 6) {
+          failureReason = "この部屋は6人で満員です。";
+          return;
+        }
+
+        const existingOrders = Object.values(room.players)
+          .map(p => Number(p && p.joinOrder) || 0);
+
+        const storedNext = Number(room.nextJoinOrder) || 0;
+        const maxExisting = existingOrders.length ? Math.max(...existingOrders) : 0;
+        const newOrder = Math.max(storedNext, maxExisting) + 1;
+
+        room.nextJoinOrder = newOrder;
+        room.players[uid] = roomPlayerData("GUEST", newOrder);
+
+        return room;
+      });
+
+      if (!result.committed) {
+        throw new Error(failureReason || "部屋への参加に失敗しました。");
       }
 
-      const players = room.players || {};
-      if (!players[uid] && Object.keys(players).length >= 6) {
-        throw new Error("この部屋は6人で満員です。");
-      }
-
-      await roomRef.child("players/" + uid).set(roomPlayerData("GUEST"));
       return code;
+    }
+
+    async function leaveRoom(code, uid) {
+      const roomRef = firebase.database().ref("rooms/" + code);
+      let roomDeleted = false;
+      let newHostUid = null;
+
+      const result = await roomRef.transaction(room => {
+        if (room === null) {
+          roomDeleted = true;
+          return null;
+        }
+
+        room.players = room.players || {};
+
+        if (!room.players[uid]) {
+          return room;
+        }
+
+        delete room.players[uid];
+
+        const remainingEntries = Object.entries(room.players);
+
+        if (remainingEntries.length === 0) {
+          roomDeleted = true;
+          return null;
+        }
+
+        if (room.hostUid === uid || !room.players[room.hostUid]) {
+          remainingEntries.sort((a, b) => {
+            const ao = Number(a[1] && a[1].joinOrder) || Number.MAX_SAFE_INTEGER;
+            const bo = Number(b[1] && b[1].joinOrder) || Number.MAX_SAFE_INTEGER;
+            return ao - bo;
+          });
+
+          newHostUid = remainingEntries[0][0];
+          room.hostUid = newHostUid;
+        }
+
+        return room;
+      });
+
+      if (!result.committed && !roomDeleted) {
+        throw new Error("退出処理に失敗しました。");
+      }
+
+      return { roomDeleted, newHostUid };
+    }
+
+    function resetLobbyUI() {
+      if (currentRoomRef) {
+        currentRoomRef.off();
+        currentRoomRef = null;
+      }
+
+      currentRoomCode = null;
+      currentRoomData = null;
+
+      roomCodeEl.textContent = "------";
+      roomBox.classList.remove("show");
+
+      playersList.textContent = "—";
+      playersBox.style.display = "none";
+
+      readyBtn.style.display = "none";
+      readyBtn.disabled = true;
+
+      startBattleBtn.style.display = "none";
+      startBattleBtn.disabled = true;
+
+      leaveRoomBtn.style.display = "none";
+      leaveRoomBtn.disabled = true;
+
+      stopCountdown();
+
+      joinCodeInput.value = "";
+      createRoomBtn.disabled = false;
+      joinRoomBtn.disabled = false;
     }
 
     async function copyText(text) {
@@ -496,6 +612,33 @@
           } catch (err) {
             console.error(err);
             setMessage("コピーに失敗しました。ルームIDは " + currentRoomCode + " です。");
+          }
+        });
+
+        leaveRoomBtn.addEventListener("click", async () => {
+          if (!currentRoomCode || !currentUser) return;
+
+          const leavingCode = currentRoomCode;
+          leaveRoomBtn.disabled = true;
+          readyBtn.disabled = true;
+          startBattleBtn.disabled = true;
+          setMessage("部屋から退出しています…");
+
+          try {
+            const result = await leaveRoom(leavingCode, currentUser.uid);
+            resetLobbyUI();
+
+            if (result.roomDeleted) {
+              setMessage("退出しました。参加者が0人になったため、部屋 " + leavingCode + " は削除されました。");
+            } else if (result.newHostUid) {
+              setMessage("退出しました。次の入室者へホストを引き継ぎました。");
+            } else {
+              setMessage("部屋 " + leavingCode + " から退出しました。");
+            }
+          } catch (err) {
+            console.error(err);
+            leaveRoomBtn.disabled = false;
+            setMessage("退出に失敗しました: " + (err && err.message ? err.message : err));
           }
         });
 
