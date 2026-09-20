@@ -540,7 +540,23 @@
           };
         });
 
-        if (result.committed) return code;
+        if (result.committed) {
+          // UI版でもホストが必ず1人目として入室済みになるよう明示的に保証する。
+          const hostPlayerRef = roomRef.child("players/" + uid);
+          const hostSnap = await hostPlayerRef.once("value");
+
+          if (!hostSnap.exists()) {
+            await hostPlayerRef.set(roomPlayerData("HOST", 1));
+          }
+
+          // ホスト情報と入室順カウンタも念のため保証。
+          await roomRef.update({
+            hostUid: uid,
+            nextJoinOrder: 1
+          });
+
+          return code;
+        }
       }
 
       throw new Error("空いている部屋番号を作成できませんでした。");
