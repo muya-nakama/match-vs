@@ -310,6 +310,62 @@
       min-height:15px;
     }
 
+
+    .battleGameScreen{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:999;
+      background:#000;
+    }
+    .battleGameScreen.show{display:block}
+    .battleTopBar{
+      position:absolute;
+      left:0;
+      right:0;
+      top:0;
+      z-index:4;
+      height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 12px;
+      background:rgba(7,12,20,.92);
+      border-bottom:1px solid rgba(255,255,255,.12);
+      color:#fff;
+      font-size:12px;
+      font-weight:800;
+      backdrop-filter:blur(8px);
+    }
+    .battleTopBar .roomMini{
+      color:#9fb0c3;
+      font-weight:700;
+    }
+    .battleGameFrame{
+      position:absolute;
+      left:0;
+      right:0;
+      top:44px;
+      bottom:0;
+      width:100%;
+      height:calc(100% - 44px);
+      border:0;
+      background:#000;
+    }
+    .battleLoadOverlay{
+      position:absolute;
+      inset:44px 0 0;
+      z-index:3;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#050911;
+      color:#fff;
+      font-weight:900;
+      font-size:18px;
+    }
+    .battleLoadOverlay.hidden{display:none}
+
     code{
       background:#0b1016;
       border-radius:6px;
@@ -321,7 +377,7 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-avatar-upload-01</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: battle-game-handoff-01</div>
       <div class="sub">
         Firebase接続・6桁ルーム・6人ロビー・プレイヤー名同期・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
@@ -399,6 +455,20 @@
     </section>
   </main>
 
+  <section id="battleGameScreen" class="battleGameScreen" aria-hidden="true">
+    <div class="battleTopBar">
+      <span>Match-3 Battle</span>
+      <span id="battleRoomMini" class="roomMini">ROOM ------</span>
+    </div>
+    <div id="battleLoadOverlay" class="battleLoadOverlay">ゲームを準備しています…</div>
+    <iframe
+      id="battleGameFrame"
+      class="battleGameFrame"
+      src="https://muya-nakama.github.io/match3/"
+      title="Match-3 Battle Game"
+      loading="eager"></iframe>
+  </section>
+
   <!-- Firebase SDK（互換版。単体HTMLで扱いやすい方式） -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -440,6 +510,10 @@
     const countdownBox = document.getElementById("countdownBox");
     const countdownText = document.getElementById("countdownText");
     const messageEl = document.getElementById("message");
+    const battleGameScreen = document.getElementById("battleGameScreen");
+    const battleGameFrame = document.getElementById("battleGameFrame");
+    const battleLoadOverlay = document.getElementById("battleLoadOverlay");
+    const battleRoomMini = document.getElementById("battleRoomMini");
 
     let currentUser = null;
     let currentRoomCode = null;
@@ -447,6 +521,9 @@
     let currentRoomData = null;
     let serverTimeOffset = 0;
     let countdownTimer = null;
+    let battleFrameReady = false;
+    let battleStarted = false;
+    const BATTLE_MINUTES = 3;
 
     function setMessage(text) {
       messageEl.textContent = text;
@@ -694,6 +771,64 @@
       }
     }
 
+    battleGameFrame.addEventListener("load", () => {
+      battleFrameReady = true;
+      if (battleLoadOverlay) battleLoadOverlay.textContent = "ゲーム準備完了";
+    });
+
+    async function enterBattleGame(startAt) {
+      if (battleStarted) return;
+      battleStarted = true;
+
+      battleRoomMini.textContent = `ROOM ${currentRoomCode || "------"}`;
+      battleGameScreen.classList.add("show");
+      battleGameScreen.setAttribute("aria-hidden", "false");
+
+      // ホストだけ部屋状態を playing に更新
+      if (currentRoomCode && currentRoomData && isHost(currentRoomData)) {
+        try {
+          await firebase.database().ref("rooms/" + currentRoomCode).update({
+            status: "playing",
+            startedAt: startAt || firebase.database.ServerValue.TIMESTAMP
+          });
+        } catch (e) {
+          console.error("room playing update failed", e);
+        }
+      }
+
+      const startInsideFrame = () => {
+        try {
+          const w = battleGameFrame.contentWindow;
+          if (!w) throw new Error("game frame unavailable");
+
+          // 対戦では現段階のソロ妨害モードはOFF。
+          // 次工程でオンライン妨害に置き換える。
+          if (typeof w.interferenceEnabled !== "undefined") {
+            w.interferenceEnabled = false;
+          }
+          if (typeof w.syncToggles === "function") {
+            w.syncToggles();
+          }
+
+          if (typeof w.startGame !== "function") {
+            throw new Error("startGame がまだ利用できません");
+          }
+
+          w.startGame(BATTLE_MINUTES);
+          battleLoadOverlay.classList.add("hidden");
+        } catch (err) {
+          console.error(err);
+          battleLoadOverlay.classList.remove("hidden");
+          battleLoadOverlay.textContent = "ゲーム本体の準備待ち…";
+
+          // iframe読み込みが少し遅い端末向けに再試行
+          setTimeout(startInsideFrame, 300);
+        }
+      };
+
+      startInsideFrame();
+    }
+
     function runCountdown(startAt) {
       if (countdownTimer) {
         clearInterval(countdownTimer);
@@ -708,9 +843,10 @@
 
         if (remain <= 0) {
           countdownText.textContent = "START!";
-          setMessage("開始時刻に到達しました。ここから先で実際のゲーム画面へ切り替える予定です。");
+          setMessage("START!");
           clearInterval(countdownTimer);
           countdownTimer = null;
+          enterBattleGame(startAt);
           return;
         }
 
@@ -750,6 +886,9 @@
 
         if (room.status === "countdown" && Number(room.startAt)) {
           runCountdown(Number(room.startAt));
+        } else if (room.status === "playing") {
+          stopCountdown();
+          enterBattleGame(Number(room.startAt) || Date.now() + serverTimeOffset);
         } else if (room.status === "waiting") {
           stopCountdown();
         }
@@ -941,6 +1080,11 @@
 
       currentRoomCode = null;
       currentRoomData = null;
+      battleStarted = false;
+      battleGameScreen.classList.remove("show");
+      battleGameScreen.setAttribute("aria-hidden", "true");
+      battleLoadOverlay.classList.remove("hidden");
+      battleLoadOverlay.textContent = battleFrameReady ? "ゲーム準備完了" : "ゲームを準備しています…";
 
       roomCodeEl.textContent = "------";
       roomBox.classList.remove("show");
