@@ -366,6 +366,25 @@
     }
     .battleLoadOverlay.hidden{display:none}
 
+    .gameLoadGate{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin:0 0 12px;
+      color:#cbd6e3;
+      font-size:13px;
+      font-weight:800;
+    }
+    .gameLoadGate.ready{color:#8ee6ae}
+    .gameLoadGate.failed{color:#ff9f9f}
+    .gameReloadBtn{
+      width:auto;
+      padding:7px 10px;
+      font-size:12px;
+    }
+    .gameReloadBtn[hidden]{display:none}
+
     .battleResultOverlay{
       display:none;
       position:fixed;
@@ -735,7 +754,7 @@ body{
     <section id="topPage" class="pageView active">
       <section class="card">
       <h1>モンパッチ</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.59</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.60</div>
       <div class="sub">
         シングルモードとオンライン対戦モードが遊べるマッチパズル。
       </div>
@@ -782,6 +801,10 @@ body{
       </div>
 
       <div id="multiControlsSource">
+      <div id="gameLoadGate" class="gameLoadGate" role="status" aria-live="polite">
+        <span id="gameLoadGateText">ゲーム本体を読み込んでいます…</span>
+        <button id="gameReloadBtn" class="gameReloadBtn" type="button" hidden>ゲームを再読み込み</button>
+      </div>
       <button id="createRoomBtn" type="button" disabled>ルームID作成</button>
 
       <div id="joinRoomArea" class="row" style="margin-top:18px">
