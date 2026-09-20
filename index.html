@@ -144,7 +144,7 @@
       <div class="row" style="margin-top:18px">
         <div class="label">部屋番号を入力して参加</div>
         <input id="joinCodeInput" inputmode="numeric" maxlength="6"
-               placeholder="例: 519194"
+               placeholder="6桁の部屋番号を入力"
                style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b1016;color:#fff;font-size:18px;letter-spacing:.08em;margin-top:6px">
         <button id="joinRoomBtn" type="button" disabled>この部屋に参加</button>
       </div>
@@ -152,11 +152,20 @@
       <div id="roomBox" class="room">
         <div class="roomLabel">現在の部屋番号</div>
         <div id="roomCode" class="roomCode">------</div>
+        <button id="copyRoomBtn" type="button" style="margin-top:12px">ルームIDをコピー</button>
       </div>
 
       <div id="playersBox" class="row" style="display:none;margin-top:18px">
-        <div class="label">参加者</div>
+        <div class="label">参加者（2〜6人）</div>
         <div id="playersList" class="value">—</div>
+      </div>
+
+      <button id="readyBtn" type="button" disabled style="display:none">準備完了にする</button>
+      <button id="startBattleBtn" type="button" disabled style="display:none">対戦開始</button>
+
+      <div id="countdownBox" class="room" style="margin-top:18px">
+        <div class="roomLabel">開始カウントダウン</div>
+        <div id="countdownText" class="roomCode">—</div>
       </div>
 
       <div id="message" class="message"></div>
@@ -187,13 +196,21 @@
     const joinCodeInput = document.getElementById("joinCodeInput");
     const roomBox = document.getElementById("roomBox");
     const roomCodeEl = document.getElementById("roomCode");
+    const copyRoomBtn = document.getElementById("copyRoomBtn");
     const playersBox = document.getElementById("playersBox");
     const playersList = document.getElementById("playersList");
+    const readyBtn = document.getElementById("readyBtn");
+    const startBattleBtn = document.getElementById("startBattleBtn");
+    const countdownBox = document.getElementById("countdownBox");
+    const countdownText = document.getElementById("countdownText");
     const messageEl = document.getElementById("message");
 
     let currentUser = null;
     let currentRoomCode = null;
-    let currentPlayersRef = null;
+    let currentRoomRef = null;
+    let currentRoomData = null;
+    let serverTimeOffset = 0;
+    let countdownTimer = null;
 
     function setMessage(text) {
       messageEl.textContent = text;
@@ -203,7 +220,7 @@
       return String(Math.floor(100000 + Math.random() * 900000));
     }
 
-    function roomPlayerData(name = "TEST") {
+    function roomPlayerData(name) {
       return {
         name,
         ready: false,
@@ -213,22 +230,123 @@
       };
     }
 
-    function watchPlayers(code) {
-      if (currentPlayersRef) currentPlayersRef.off();
+    function playerCount(room) {
+      return room && room.players ? Object.keys(room.players).length : 0;
+    }
 
-      currentPlayersRef = firebase.database().ref("rooms/" + code + "/players");
-      currentPlayersRef.on("value", snap => {
-        const players = snap.val() || {};
-        const names = Object.entries(players).map(([uid, p], i) => {
-          const label = p && p.name ? p.name : "Player";
-          return `${i + 1}. ${label} (${uid.slice(0, 6)}…)`;
-        });
+    function allPlayersReady(room) {
+      if (!room || !room.players) return false;
+      const players = Object.values(room.players);
+      return players.length >= 2 && players.every(p => p && p.ready === true);
+    }
 
-        playersList.innerHTML = names.length
-          ? names.map(x => `<div style="margin:6px 0">${x}</div>`).join("")
-          : "—";
+    function isHost(room) {
+      return !!(room && currentUser && room.hostUid === currentUser.uid);
+    }
 
-        playersBox.style.display = "block";
+    function renderPlayers(room) {
+      const players = (room && room.players) || {};
+      const entries = Object.entries(players);
+
+      playersList.innerHTML = entries.length
+        ? entries.map(([uid, p], i) => {
+            const hostMark = room.hostUid === uid ? " 👑" : "";
+            const meMark = currentUser && currentUser.uid === uid ? "（自分）" : "";
+            const readyMark = p && p.ready ? "✅ 準備完了" : "⏳ 待機中";
+            const label = p && p.name ? p.name : "Player";
+            return `<div style="margin:8px 0">${i + 1}. ${label}${hostMark} ${meMark}<br><span style="font-size:13px;color:#aeb8c5">${readyMark}</span></div>`;
+          }).join("")
+        : "—";
+
+      playersBox.style.display = "block";
+    }
+
+    function updateLobbyButtons(room) {
+      if (!currentUser || !room) return;
+
+      const me = room.players && room.players[currentUser.uid];
+      const waiting = room.status === "waiting";
+
+      readyBtn.style.display = "block";
+      readyBtn.disabled = !me || !waiting;
+      readyBtn.textContent = me && me.ready ? "準備完了を解除" : "準備完了にする";
+
+      if (isHost(room)) {
+        startBattleBtn.style.display = "block";
+        const canStart = waiting && playerCount(room) >= 2 && playerCount(room) <= 6 && allPlayersReady(room);
+        startBattleBtn.disabled = !canStart;
+
+        if (playerCount(room) < 2) {
+          startBattleBtn.textContent = "対戦開始（2人以上必要）";
+        } else if (!allPlayersReady(room)) {
+          startBattleBtn.textContent = "対戦開始（全員の準備待ち）";
+        } else {
+          startBattleBtn.textContent = "対戦開始";
+        }
+      } else {
+        startBattleBtn.style.display = "none";
+      }
+    }
+
+    function runCountdown(startAt) {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+
+      countdownBox.classList.add("show");
+
+      function tick() {
+        const now = Date.now() + serverTimeOffset;
+        const remain = startAt - now;
+
+        if (remain <= 0) {
+          countdownText.textContent = "START!";
+          setMessage("開始時刻に到達しました。ここから先で実際のゲーム画面へ切り替える予定です。");
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          return;
+        }
+
+        const sec = Math.ceil(remain / 1000);
+        countdownText.textContent = String(sec);
+      }
+
+      tick();
+      countdownTimer = setInterval(tick, 100);
+    }
+
+    function stopCountdown() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+      countdownText.textContent = "—";
+      countdownBox.classList.remove("show");
+    }
+
+    function watchRoom(code) {
+      if (currentRoomRef) currentRoomRef.off();
+
+      currentRoomRef = firebase.database().ref("rooms/" + code);
+      currentRoomRef.on("value", snap => {
+        if (!snap.exists()) {
+          currentRoomData = null;
+          setMessage("この部屋は削除されました。");
+          return;
+        }
+
+        const room = snap.val();
+        currentRoomData = room;
+
+        renderPlayers(room);
+        updateLobbyButtons(room);
+
+        if (room.status === "countdown" && Number(room.startAt)) {
+          runCountdown(Number(room.startAt));
+        } else if (room.status === "waiting") {
+          stopCountdown();
+        }
       });
     }
 
@@ -236,7 +354,8 @@
       currentRoomCode = code;
       roomCodeEl.textContent = code;
       roomBox.classList.add("show");
-      watchPlayers(code);
+      readyBtn.style.display = "block";
+      watchRoom(code);
       setMessage(message);
     }
 
@@ -254,15 +373,14 @@
             createdAt: firebase.database.ServerValue.TIMESTAMP,
             status: "waiting",
             hostUid: uid,
+            startAt: null,
             players: {
               [uid]: roomPlayerData("HOST")
             }
           };
         });
 
-        if (result.committed) {
-          return code;
-        }
+        if (result.committed) return code;
       }
 
       throw new Error("空いている部屋番号を作成できませんでした。");
@@ -276,18 +394,37 @@
       const roomRef = firebase.database().ref("rooms/" + code);
       const snap = await roomRef.once("value");
 
-      if (!snap.exists()) {
-        throw new Error("その部屋は見つかりません。");
-      }
+      if (!snap.exists()) throw new Error("その部屋は見つかりません。");
 
       const room = snap.val();
-      if (room && room.status && room.status !== "waiting") {
+      if (room.status !== "waiting") {
         throw new Error("その部屋は参加受付中ではありません。");
       }
 
-      const playerRef = roomRef.child("players/" + uid);
-      await playerRef.set(roomPlayerData("GUEST"));
+      const players = room.players || {};
+      if (!players[uid] && Object.keys(players).length >= 6) {
+        throw new Error("この部屋は6人で満員です。");
+      }
+
+      await roomRef.child("players/" + uid).set(roomPlayerData("GUEST"));
       return code;
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
     }
 
     async function start() {
@@ -295,6 +432,10 @@
         firebase.initializeApp(firebaseConfig);
         firebaseStatus.textContent = "接続設定 OK";
         firebaseStatus.className = "value status ok";
+
+        firebase.database().ref(".info/serverTimeOffset").on("value", snap => {
+          serverTimeOffset = Number(snap.val()) || 0;
+        });
 
         authStatus.textContent = "匿名ログイン中…";
         authStatus.className = "value status warn";
@@ -318,7 +459,7 @@
 
           try {
             const code = await createUniqueRoom(user.uid);
-            showRoom(code, "部屋を作成しました。別の端末や別ブラウザからこの6桁番号で参加できます。");
+            showRoom(code, "部屋を作成しました。ルームIDを共有して参加者を待ってください。");
           } catch (err) {
             console.error(err);
             setMessage("部屋作成に失敗しました: " + (err && err.message ? err.message : err));
@@ -343,6 +484,56 @@
           } finally {
             createRoomBtn.disabled = false;
             joinRoomBtn.disabled = false;
+          }
+        });
+
+        copyRoomBtn.addEventListener("click", async () => {
+          if (!currentRoomCode) return;
+
+          try {
+            await copyText(currentRoomCode);
+            setMessage("ルームID " + currentRoomCode + " をコピーしました。");
+          } catch (err) {
+            console.error(err);
+            setMessage("コピーに失敗しました。ルームIDは " + currentRoomCode + " です。");
+          }
+        });
+
+        readyBtn.addEventListener("click", async () => {
+          if (!currentRoomCode || !currentRoomData || !currentUser) return;
+          if (currentRoomData.status !== "waiting") return;
+
+          const me = currentRoomData.players && currentRoomData.players[currentUser.uid];
+          if (!me) return;
+
+          try {
+            await firebase.database()
+              .ref("rooms/" + currentRoomCode + "/players/" + currentUser.uid + "/ready")
+              .set(!me.ready);
+          } catch (err) {
+            console.error(err);
+            setMessage("準備状態の更新に失敗しました。");
+          }
+        });
+
+        startBattleBtn.addEventListener("click", async () => {
+          if (!currentRoomCode || !currentRoomData || !currentUser) return;
+          if (!isHost(currentRoomData)) return;
+          if (currentRoomData.status !== "waiting") return;
+          if (playerCount(currentRoomData) < 2 || playerCount(currentRoomData) > 6) return;
+          if (!allPlayersReady(currentRoomData)) return;
+
+          const startAt = Date.now() + serverTimeOffset + 5000;
+
+          try {
+            await firebase.database().ref("rooms/" + currentRoomCode).update({
+              status: "countdown",
+              startAt
+            });
+            setMessage("開始カウントダウンを送信しました。");
+          } catch (err) {
+            console.error(err);
+            setMessage("開始処理に失敗しました。");
           }
         });
 
