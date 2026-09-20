@@ -141,9 +141,22 @@
 
       <button id="createRoomBtn" type="button" disabled>6桁の部屋を作る</button>
 
+      <div class="row" style="margin-top:18px">
+        <div class="label">部屋番号を入力して参加</div>
+        <input id="joinCodeInput" inputmode="numeric" maxlength="6"
+               placeholder="例: 519194"
+               style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b1016;color:#fff;font-size:18px;letter-spacing:.08em;margin-top:6px">
+        <button id="joinRoomBtn" type="button" disabled>この部屋に参加</button>
+      </div>
+
       <div id="roomBox" class="room">
-        <div class="roomLabel">作成した部屋番号</div>
+        <div class="roomLabel">現在の部屋番号</div>
         <div id="roomCode" class="roomCode">------</div>
+      </div>
+
+      <div id="playersBox" class="row" style="display:none;margin-top:18px">
+        <div class="label">参加者</div>
+        <div id="playersList" class="value">—</div>
       </div>
 
       <div id="message" class="message"></div>
@@ -170,9 +183,17 @@
     const authStatus = document.getElementById("authStatus");
     const uidEl = document.getElementById("uid");
     const createRoomBtn = document.getElementById("createRoomBtn");
+    const joinRoomBtn = document.getElementById("joinRoomBtn");
+    const joinCodeInput = document.getElementById("joinCodeInput");
     const roomBox = document.getElementById("roomBox");
     const roomCodeEl = document.getElementById("roomCode");
+    const playersBox = document.getElementById("playersBox");
+    const playersList = document.getElementById("playersList");
     const messageEl = document.getElementById("message");
+
+    let currentUser = null;
+    let currentRoomCode = null;
+    let currentPlayersRef = null;
 
     function setMessage(text) {
       messageEl.textContent = text;
@@ -180,6 +201,43 @@
 
     function randomRoomCode() {
       return String(Math.floor(100000 + Math.random() * 900000));
+    }
+
+    function roomPlayerData(name = "TEST") {
+      return {
+        name,
+        ready: false,
+        connected: true,
+        score: 0,
+        joinedAt: firebase.database.ServerValue.TIMESTAMP
+      };
+    }
+
+    function watchPlayers(code) {
+      if (currentPlayersRef) currentPlayersRef.off();
+
+      currentPlayersRef = firebase.database().ref("rooms/" + code + "/players");
+      currentPlayersRef.on("value", snap => {
+        const players = snap.val() || {};
+        const names = Object.entries(players).map(([uid, p], i) => {
+          const label = p && p.name ? p.name : "Player";
+          return `${i + 1}. ${label} (${uid.slice(0, 6)}…)`;
+        });
+
+        playersList.innerHTML = names.length
+          ? names.map(x => `<div style="margin:6px 0">${x}</div>`).join("")
+          : "—";
+
+        playersBox.style.display = "block";
+      });
+    }
+
+    function showRoom(code, message) {
+      currentRoomCode = code;
+      roomCodeEl.textContent = code;
+      roomBox.classList.add("show");
+      watchPlayers(code);
+      setMessage(message);
     }
 
     async function createUniqueRoom(uid) {
@@ -197,13 +255,7 @@
             status: "waiting",
             hostUid: uid,
             players: {
-              [uid]: {
-                name: "TEST",
-                ready: false,
-                connected: true,
-                score: 0,
-                joinedAt: firebase.database.ServerValue.TIMESTAMP
-              }
+              [uid]: roomPlayerData("HOST")
             }
           };
         });
@@ -214,6 +266,28 @@
       }
 
       throw new Error("空いている部屋番号を作成できませんでした。");
+    }
+
+    async function joinRoom(code, uid) {
+      if (!/^\d{6}$/.test(code)) {
+        throw new Error("部屋番号は6桁の数字で入力してください。");
+      }
+
+      const roomRef = firebase.database().ref("rooms/" + code);
+      const snap = await roomRef.once("value");
+
+      if (!snap.exists()) {
+        throw new Error("その部屋は見つかりません。");
+      }
+
+      const room = snap.val();
+      if (room && room.status && room.status !== "waiting") {
+        throw new Error("その部屋は参加受付中ではありません。");
+      }
+
+      const playerRef = roomRef.child("players/" + uid);
+      await playerRef.set(roomPlayerData("GUEST"));
+      return code;
     }
 
     async function start() {
@@ -227,29 +301,48 @@
 
         const credential = await firebase.auth().signInAnonymously();
         const user = credential.user;
+        currentUser = user;
 
         authStatus.textContent = "匿名ログイン成功";
         authStatus.className = "value status ok";
         uidEl.textContent = user.uid;
 
         createRoomBtn.disabled = false;
-        setMessage("準備完了。「6桁の部屋を作る」を押してください。");
+        joinRoomBtn.disabled = false;
+        setMessage("準備完了。部屋を作るか、6桁番号を入力して参加してください。");
 
         createRoomBtn.addEventListener("click", async () => {
           createRoomBtn.disabled = true;
-          roomBox.classList.remove("show");
+          joinRoomBtn.disabled = true;
           setMessage("部屋を作成しています…");
 
           try {
             const code = await createUniqueRoom(user.uid);
-            roomCodeEl.textContent = code;
-            roomBox.classList.add("show");
-            setMessage("Firebase Realtime Database に rooms/" + code + " を作成しました。");
+            showRoom(code, "部屋を作成しました。別の端末や別ブラウザからこの6桁番号で参加できます。");
           } catch (err) {
             console.error(err);
             setMessage("部屋作成に失敗しました: " + (err && err.message ? err.message : err));
           } finally {
             createRoomBtn.disabled = false;
+            joinRoomBtn.disabled = false;
+          }
+        });
+
+        joinRoomBtn.addEventListener("click", async () => {
+          const code = joinCodeInput.value.trim();
+          createRoomBtn.disabled = true;
+          joinRoomBtn.disabled = true;
+          setMessage("部屋へ参加しています…");
+
+          try {
+            const joinedCode = await joinRoom(code, user.uid);
+            showRoom(joinedCode, "部屋 " + joinedCode + " に参加しました。");
+          } catch (err) {
+            console.error(err);
+            setMessage("参加に失敗しました: " + (err && err.message ? err.message : err));
+          } finally {
+            createRoomBtn.disabled = false;
+            joinRoomBtn.disabled = false;
           }
         });
 
