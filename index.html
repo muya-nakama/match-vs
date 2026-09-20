@@ -220,9 +220,9 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-ui-fix-01</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: lobby-name-sync-01</div>
       <div class="sub">
-        Firebase接続・6桁ルーム・6人ロビー・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
+        Firebase接続・6桁ルーム・6人ロビー・プレイヤー名同期・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
 
       <div class="row">
@@ -325,6 +325,13 @@
 
     function randomRoomCode() {
       return String(Math.floor(100000 + Math.random() * 900000));
+    }
+
+    const PLAYER_NAME_KEY = "match3_ranking_name";
+
+    function getLocalPlayerName() {
+      const saved = (localStorage.getItem(PLAYER_NAME_KEY) || "").trim().slice(0, 16);
+      return saved || "ゲスト";
     }
 
     function roomPlayerData(name, joinOrder) {
@@ -542,7 +549,7 @@
             startAt: null,
             nextJoinOrder: 1,
             players: {
-              [uid]: roomPlayerData("HOST", 1)
+              [uid]: roomPlayerData(getLocalPlayerName(), 1)
             }
           };
         });
@@ -553,7 +560,7 @@
           const hostSnap = await hostPlayerRef.once("value");
 
           if (!hostSnap.exists()) {
-            await hostPlayerRef.set(roomPlayerData("HOST", 1));
+            await hostPlayerRef.set(roomPlayerData(getLocalPlayerName(), 1));
           }
 
           // ホスト情報と入室順カウンタも念のため保証。
@@ -639,7 +646,7 @@
 
       // 4. 自分のプレイヤーデータだけを書き込む
       await roomRef.child("players/" + uid).set(
-        roomPlayerData("GUEST", newOrder)
+        roomPlayerData(getLocalPlayerName(), newOrder)
       );
 
       return code;
