@@ -366,6 +366,82 @@
     }
     .battleLoadOverlay.hidden{display:none}
 
+    .battleResultOverlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:1400;
+      background:rgba(3,7,13,.88);
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .battleResultOverlay.show{display:flex}
+    .battleResultCard{
+      width:min(92vw,430px);
+      max-height:86vh;
+      overflow:auto;
+      border-radius:22px;
+      background:#17202b;
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 22px 70px rgba(0,0,0,.48);
+      padding:22px 18px 18px;
+      color:#fff;
+    }
+    .battleResultTitle{
+      text-align:center;
+      font-size:24px;
+      font-weight:1000;
+      margin-bottom:14px;
+    }
+    .battleResultRows{
+      display:grid;
+      gap:8px;
+    }
+    .battleResultRow{
+      display:grid;
+      grid-template-columns:34px 42px 1fr auto;
+      gap:8px;
+      align-items:center;
+      padding:8px 9px;
+      border-radius:13px;
+      background:rgba(255,255,255,.055);
+    }
+    .battleResultRank{
+      font-size:18px;
+      font-weight:1000;
+      text-align:center;
+    }
+    .battleResultAvatar{
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      background:#263444;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:1000;
+    }
+    .battleResultAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .battleResultName{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-weight:900;
+    }
+    .battleResultScore{
+      font-weight:1000;
+      font-variant-numeric:tabular-nums;
+    }
+    .battleReturnBtn{
+      width:100%;
+      margin-top:16px;
+      padding:13px 10px;
+    }
+
     code{
       background:#0b1016;
       border-radius:6px;
@@ -377,7 +453,7 @@
   <main class="app">
     <section class="card">
       <h1>Match-3 Battle 接続テスト</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: battle-game-handoff-01</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">build: battle-core-01</div>
       <div class="sub">
         Firebase接続・6桁ルーム・6人ロビー・プレイヤー名同期・準備・開始直前・退出／ホスト引き継ぎを確認するテストページです。
       </div>
@@ -469,6 +545,14 @@
       loading="eager"></iframe>
   </section>
 
+  <div id="battleResultOverlay" class="battleResultOverlay" aria-hidden="true">
+    <div class="battleResultCard">
+      <div class="battleResultTitle">対戦結果</div>
+      <div id="battleResultRows" class="battleResultRows"></div>
+      <button id="battleReturnBtn" class="battleReturnBtn" type="button">ロビーへ戻る</button>
+    </div>
+  </div>
+
   <!-- Firebase SDK（互換版。単体HTMLで扱いやすい方式） -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -514,6 +598,9 @@
     const battleGameFrame = document.getElementById("battleGameFrame");
     const battleLoadOverlay = document.getElementById("battleLoadOverlay");
     const battleRoomMini = document.getElementById("battleRoomMini");
+    const battleResultOverlay = document.getElementById("battleResultOverlay");
+    const battleResultRows = document.getElementById("battleResultRows");
+    const battleReturnBtn = document.getElementById("battleReturnBtn");
 
     let currentUser = null;
     let currentRoomCode = null;
@@ -523,7 +610,16 @@
     let countdownTimer = null;
     let battleFrameReady = false;
     let battleStarted = false;
+    let scoreSyncTimer = null;
+    let battleStateTimer = null;
+    let attackFlushTimer = null;
+    let attackRef = null;
+    let attackQueue = [];
+    let finalScoreSubmitted = false;
+    let lastSyncedScore = -1;
+    let resultsShownForRound = false;
     const BATTLE_MINUTES = 3;
+    const SCORE_SYNC_MS = 700;
 
     function setMessage(text) {
       messageEl.textContent = text;
@@ -771,8 +867,387 @@
       }
     }
 
+
+    function safeFrameEval(expr, fallback=null) {
+      try {
+        const w = battleGameFrame.contentWindow;
+        if (!w) return fallback;
+        return w.eval(expr);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function injectBattleHudIntoFrame() {
+      try {
+        const d = battleGameFrame.contentDocument;
+        if (!d || d.getElementById("__battleHud")) return;
+
+        const style = d.createElement("style");
+        style.id = "__battleHudStyle";
+        style.textContent = `
+          #__battleHud{
+            width:min(100%,520px);
+            margin:5px auto 2px;
+            display:flex;
+            gap:2px;
+            justify-content:center;
+            align-items:start;
+            padding:3px 2px;
+            box-sizing:border-box;
+          }
+          .__bhPlayer{
+            flex:1 1 0;
+            min-width:0;
+            text-align:center;
+            color:#fff;
+            font-family:inherit;
+          }
+          .__bhAvatar{
+            width:28px;
+            height:28px;
+            margin:0 auto 2px;
+            border-radius:50%;
+            overflow:hidden;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#263444;
+            border:1px solid rgba(255,255,255,.18);
+            font-size:9px;
+            font-weight:1000;
+          }
+          .__bhAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+          .__bhName{
+            height:13px;
+            line-height:13px;
+            overflow:hidden;
+            white-space:nowrap;
+            text-overflow:ellipsis;
+            font-size:8px;
+            font-weight:900;
+            color:#c8d4e2;
+          }
+          .__bhScore{
+            height:14px;
+            line-height:14px;
+            font-size:9px;
+            font-weight:1000;
+            font-variant-numeric:tabular-nums;
+            color:#fff;
+          }
+        `;
+        d.head.appendChild(style);
+
+        const hud = d.createElement("div");
+        hud.id = "__battleHud";
+        const boardWrap = d.querySelector(".boardWrap");
+        const app = d.querySelector(".app");
+        if (boardWrap && app) boardWrap.insertAdjacentElement("afterend", hud);
+        else if (app) app.appendChild(hud);
+      } catch (e) {
+        console.error("HUD inject failed", e);
+      }
+    }
+
+    function renderBattleHud(room=currentRoomData) {
+      if (!room || !room.players) return;
+      injectBattleHudIntoFrame();
+
+      try {
+        const hud = battleGameFrame.contentDocument.getElementById("__battleHud");
+        if (!hud) return;
+
+        const entries = Object.entries(room.players)
+          .sort((a,b)=>(Number(a[1]?.joinOrder)||9999)-(Number(b[1]?.joinOrder)||9999))
+          .slice(0,6);
+
+        hud.innerHTML = entries.map(([uid,p]) => {
+          const raw = p?.name || "Player";
+          const name = displayName(raw);
+          const avatar = p?.avatarData
+            ? `<img src="${p.avatarData}" alt="">`
+            : avatarText(raw);
+          const sc = Number(p?.score || 0).toLocaleString("ja-JP");
+          return `<div class="__bhPlayer">
+            <div class="__bhAvatar">${avatar}</div>
+            <div class="__bhName">${name}</div>
+            <div class="__bhScore">${sc}</div>
+          </div>`;
+        }).join("");
+      } catch (e) {
+        console.error("HUD render failed", e);
+      }
+    }
+
+    function pickAttackTargetUid() {
+      if (!currentUser || !currentRoomData?.players) return null;
+      const others = Object.entries(currentRoomData.players)
+        .filter(([uid,p]) => uid !== currentUser.uid && p)
+        .map(([uid]) => uid);
+      if (!others.length) return null;
+      return others[Math.floor(Math.random() * others.length)];
+    }
+
+    window.__battleSendAttack = async function(kind) {
+      if (!battleStarted || !currentRoomCode || !currentUser) return false;
+      if (kind !== "ice" && kind !== "chain") return false;
+
+      const targetUid = pickAttackTargetUid();
+      if (!targetUid) return false;
+
+      try {
+        const ref = firebase.database().ref(`rooms/${currentRoomCode}/attacks`).push();
+        await ref.set({
+          id: ref.key,
+          fromUid: currentUser.uid,
+          toUid: targetUid,
+          kind,
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        return true;
+      } catch (e) {
+        console.error("attack send failed", e);
+        return false;
+      }
+    };
+
+    async function applyIncomingAttack(event) {
+      if (!event || !event.kind) return false;
+      const w = battleGameFrame.contentWindow;
+      if (!w) return false;
+
+      try {
+        const running = !!w.eval("gameRunning");
+        const busy = !!w.eval("lock");
+        if (!running || busy) return false;
+
+        if (typeof w.__battleOriginalApplyRandomBlocker !== "function") return false;
+        const changed = w.__battleOriginalApplyRandomBlocker(event.kind);
+        if (changed && typeof w.render === "function") w.render();
+        else if (changed) w.eval("render()");
+        return true;
+      } catch (e) {
+        console.error("incoming attack apply failed", e);
+        return false;
+      }
+    }
+
+    function startAttackListener() {
+      if (attackRef) attackRef.off();
+      attackQueue = [];
+      if (!currentRoomCode || !currentUser) return;
+
+      attackRef = firebase.database().ref(`rooms/${currentRoomCode}/attacks`);
+      attackRef.on("child_added", snap => {
+        const ev = snap.val();
+        if (!ev || ev.toUid !== currentUser.uid) return;
+        attackQueue.push({ key:snap.key, ...ev });
+      });
+
+      if (attackFlushTimer) clearInterval(attackFlushTimer);
+      attackFlushTimer = setInterval(async () => {
+        if (!attackQueue.length || !battleStarted) return;
+
+        const ev = attackQueue[0];
+        const applied = await applyIncomingAttack(ev);
+        if (!applied) return;
+
+        attackQueue.shift();
+        try {
+          await firebase.database().ref(`rooms/${currentRoomCode}/attacks/${ev.key}`).remove();
+        } catch (e) {
+          console.error("attack remove failed", e);
+        }
+      }, 80);
+    }
+
+    function stopBattleRuntime() {
+      if (scoreSyncTimer) { clearInterval(scoreSyncTimer); scoreSyncTimer = null; }
+      if (battleStateTimer) { clearInterval(battleStateTimer); battleStateTimer = null; }
+      if (attackFlushTimer) { clearInterval(attackFlushTimer); attackFlushTimer = null; }
+      if (attackRef) { attackRef.off(); attackRef = null; }
+      attackQueue = [];
+    }
+
+    async function syncOwnScore(force=false) {
+      if (!battleStarted || !currentRoomCode || !currentUser) return;
+      const sc = Number(safeFrameEval("score", 0)) || 0;
+      if (!force && sc === lastSyncedScore) return;
+      lastSyncedScore = sc;
+
+      try {
+        await firebase.database()
+          .ref(`rooms/${currentRoomCode}/players/${currentUser.uid}/score`)
+          .set(sc);
+      } catch (e) {
+        console.error("score sync failed", e);
+      }
+    }
+
+    async function submitFinalScore() {
+      if (finalScoreSubmitted || !currentRoomCode || !currentUser) return;
+      const busy = !!safeFrameEval("lock", false);
+      if (busy) return;
+
+      finalScoreSubmitted = true;
+      const sc = Number(safeFrameEval("score", 0)) || 0;
+      lastSyncedScore = sc;
+
+      try {
+        await firebase.database()
+          .ref(`rooms/${currentRoomCode}/players/${currentUser.uid}`)
+          .update({
+            score: sc,
+            finalScore: sc,
+            finished: true,
+            returned: false
+          });
+      } catch (e) {
+        finalScoreSubmitted = false;
+        console.error("final score submit failed", e);
+      }
+    }
+
+    function startScoreAndFinishWatch() {
+      if (scoreSyncTimer) clearInterval(scoreSyncTimer);
+      if (battleStateTimer) clearInterval(battleStateTimer);
+
+      lastSyncedScore = -1;
+      finalScoreSubmitted = false;
+
+      scoreSyncTimer = setInterval(() => syncOwnScore(false), SCORE_SYNC_MS);
+
+      battleStateTimer = setInterval(() => {
+        if (!battleStarted || finalScoreSubmitted) return;
+        const running = !!safeFrameEval("gameRunning", false);
+        const busy = !!safeFrameEval("lock", false);
+        const remain = Number(safeFrameEval("remainingSeconds", 0));
+
+        if ((!running || remain <= 0) && !busy) submitFinalScore();
+      }, 120);
+    }
+
+    async function maybeFinalizeResults(room) {
+      if (!currentRoomCode || !room || room.status !== "playing" || !room.players) return;
+      const entries = Object.entries(room.players);
+      if (entries.length < 2 || !entries.every(([,p]) => p && p.finished === true)) return;
+
+      const roomRef = firebase.database().ref(`rooms/${currentRoomCode}`);
+      try {
+        await roomRef.transaction(current => {
+          if (!current || current.status !== "playing" || !current.players) return;
+          const ps = Object.entries(current.players);
+          if (ps.length < 2 || !ps.every(([,p]) => p && p.finished === true)) return;
+
+          const sorted = ps.slice().sort((a,b) => {
+            const ds = Number(b[1]?.finalScore || b[1]?.score || 0) - Number(a[1]?.finalScore || a[1]?.score || 0);
+            if (ds) return ds;
+            return (Number(a[1]?.joinOrder)||9999) - (Number(b[1]?.joinOrder)||9999);
+          });
+
+          const results = {};
+          let lastScore = null;
+          let lastRank = 0;
+          sorted.forEach(([uid,p], idx) => {
+            const score = Number(p?.finalScore || p?.score || 0);
+            const rank = (lastScore !== null && score === lastScore) ? lastRank : idx + 1;
+            lastScore = score;
+            lastRank = rank;
+            results[uid] = {
+              rank,
+              score,
+              name: p?.name || "Player",
+              avatarData: p?.avatarData || ""
+            };
+          });
+
+          Object.values(current.players).forEach(p => {
+            p.ready = false;
+            p.returned = false;
+          });
+
+          current.results = results;
+          current.status = "results";
+          current.resultAt = Date.now() + serverTimeOffset;
+          return current;
+        });
+      } catch (e) {
+        console.error("result finalize failed", e);
+      }
+    }
+
+    function showBattleResults(room) {
+      if (!room?.results) return;
+      resultsShownForRound = true;
+      stopBattleRuntime();
+
+      const rows = Object.entries(room.results)
+        .sort((a,b)=>(Number(a[1]?.rank)||999)-(Number(b[1]?.rank)||999));
+
+      battleResultRows.innerHTML = rows.map(([uid,r]) => {
+        const raw = r?.name || "Player";
+        const av = r?.avatarData
+          ? `<img src="${r.avatarData}" alt="">`
+          : avatarText(raw);
+        return `<div class="battleResultRow">
+          <div class="battleResultRank">${Number(r?.rank)||"-"}位</div>
+          <div class="battleResultAvatar">${av}</div>
+          <div class="battleResultName">${displayName(raw)}${uid===currentUser?.uid ? "（自分）" : ""}</div>
+          <div class="battleResultScore">${Number(r?.score||0).toLocaleString("ja-JP")}</div>
+        </div>`;
+      }).join("");
+
+      battleResultOverlay.classList.add("show");
+      battleResultOverlay.setAttribute("aria-hidden","false");
+    }
+
+    async function returnFromResults() {
+      if (!currentRoomCode || !currentUser) return;
+
+      battleResultOverlay.classList.remove("show");
+      battleResultOverlay.setAttribute("aria-hidden","true");
+      battleGameScreen.classList.remove("show");
+      battleGameScreen.setAttribute("aria-hidden","true");
+      battleStarted = false;
+
+      try {
+        await firebase.database()
+          .ref(`rooms/${currentRoomCode}/players/${currentUser.uid}/returned`)
+          .set(true);
+
+        await firebase.database().ref(`rooms/${currentRoomCode}`).transaction(room => {
+          if (!room || room.status !== "results" || !room.players) return room;
+          const ps = Object.values(room.players);
+          if (!ps.length || !ps.every(p => p && p.returned === true)) return room;
+
+          Object.values(room.players).forEach(p => {
+            p.ready = false;
+            p.score = 0;
+            p.finished = false;
+            p.returned = false;
+            delete p.finalScore;
+          });
+          room.status = "waiting";
+          room.startAt = null;
+          room.startedAt = null;
+          room.resultAt = null;
+          room.results = null;
+          room.attacks = null;
+          return room;
+        });
+      } catch (e) {
+        console.error("return to lobby failed", e);
+        setMessage("ロビー復帰処理に失敗しました。");
+      }
+    }
+
+    battleReturnBtn.addEventListener("click", returnFromResults);
+
     battleGameFrame.addEventListener("load", () => {
       battleFrameReady = true;
+      injectBattleHudIntoFrame();
+      if (currentRoomData) renderBattleHud(currentRoomData);
       if (battleLoadOverlay) battleLoadOverlay.textContent = "ゲーム準備完了";
     });
 
@@ -801,20 +1276,30 @@
           const w = battleGameFrame.contentWindow;
           if (!w) throw new Error("game frame unavailable");
 
-          // 対戦では現段階のソロ妨害モードはOFF。
-          // 次工程でオンライン妨害に置き換える。
-          if (typeof w.interferenceEnabled !== "undefined") {
-            w.interferenceEnabled = false;
-          }
-          if (typeof w.syncToggles === "function") {
-            w.syncToggles();
-          }
-
           if (typeof w.startGame !== "function") {
             throw new Error("startGame がまだ利用できません");
           }
 
+          // ソロ版の妨害生成ロジックは利用するが、
+          // 自分の盤面へ置く代わりにFirebaseへ送信する。
+          w.eval(`
+            if (!window.__battlePatched) {
+              window.__battleOriginalApplyRandomBlocker = applyRandomBlocker;
+              applyRandomBlocker = function(kind) {
+                try { parent.__battleSendAttack(kind); } catch(e) {}
+                return false;
+              };
+              window.__battlePatched = true;
+            }
+            interferenceEnabled = true;
+            syncToggles();
+          `);
+
+          injectBattleHudIntoFrame();
           w.startGame(BATTLE_MINUTES);
+          renderBattleHud(currentRoomData);
+          startAttackListener();
+          startScoreAndFinishWatch();
           battleLoadOverlay.classList.add("hidden");
         } catch (err) {
           console.error(err);
@@ -883,14 +1368,27 @@
 
         renderPlayers(room);
         updateLobbyButtons(room);
+        renderBattleHud(room);
 
         if (room.status === "countdown" && Number(room.startAt)) {
           runCountdown(Number(room.startAt));
         } else if (room.status === "playing") {
           stopCountdown();
           enterBattleGame(Number(room.startAt) || Date.now() + serverTimeOffset);
+          maybeFinalizeResults(room);
+        } else if (room.status === "results") {
+          stopCountdown();
+          if (room.results) showBattleResults(room);
         } else if (room.status === "waiting") {
           stopCountdown();
+          if (resultsShownForRound) {
+            resultsShownForRound = false;
+            battleResultOverlay.classList.remove("show");
+            battleResultOverlay.setAttribute("aria-hidden","true");
+            battleGameScreen.classList.remove("show");
+            battleGameScreen.setAttribute("aria-hidden","true");
+            battleStarted = false;
+          }
         }
       });
     }
@@ -1078,9 +1576,14 @@
         currentRoomRef = null;
       }
 
+      stopBattleRuntime();
       currentRoomCode = null;
       currentRoomData = null;
       battleStarted = false;
+      finalScoreSubmitted = false;
+      resultsShownForRound = false;
+      battleResultOverlay.classList.remove("show");
+      battleResultOverlay.setAttribute("aria-hidden","true");
       battleGameScreen.classList.remove("show");
       battleGameScreen.setAttribute("aria-hidden", "true");
       battleLoadOverlay.classList.remove("hidden");
@@ -1293,10 +1796,21 @@
           const startAt = Date.now() + serverTimeOffset + 5000;
 
           try {
-            await firebase.database().ref("rooms/" + currentRoomCode).update({
+            const roomRef = firebase.database().ref("rooms/" + currentRoomCode);
+            const updates = {
               status: "countdown",
-              startAt
+              startAt,
+              attacks: null,
+              results: null,
+              resultAt: null
+            };
+            Object.keys(currentRoomData.players || {}).forEach(uid => {
+              updates[`players/${uid}/score`] = 0;
+              updates[`players/${uid}/finished`] = false;
+              updates[`players/${uid}/returned`] = false;
+              updates[`players/${uid}/finalScore`] = null;
             });
+            await roomRef.update(updates);
             setMessage("開始カウントダウンを送信しました。");
           } catch (err) {
             console.error(err);
