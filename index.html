@@ -405,24 +405,22 @@
 
       const roomRef = firebase.database().ref("rooms/" + code);
 
-      // 先に明示的に部屋を取得する。
-      // 新しいブラウザ/シークレットセッションで transaction の初回値が
-      // ローカル未同期の null になるケースを避けるため。
+      // 1. まずサーバーから部屋を明示的に取得
       const initialSnap = await roomRef.once("value");
 
       if (!initialSnap.exists()) {
         throw new Error("その部屋は見つかりません。");
       }
 
-      const initialRoom = initialSnap.val();
+      const initialRoom = initialSnap.val() || {};
 
-      if (!initialRoom || initialRoom.status !== "waiting") {
+      if (initialRoom.status !== "waiting") {
         throw new Error("その部屋は参加受付中ではありません。");
       }
 
       const initialPlayers = initialRoom.players || {};
 
-      // すでに同じUIDで入室済みなら、そのまま参加成功扱い。
+      // 同じUIDですでに入室済みなら、そのまま成功扱い
       if (initialPlayers[uid]) {
         return code;
       }
@@ -431,47 +429,47 @@
         throw new Error("この部屋は6人で満員です。");
       }
 
-      let failureReason = "";
-
-      // 読み込み後、同時参加による競合だけ transaction で再確認して追加する。
-      const result = await roomRef.transaction(room => {
-        if (room === null) {
-          failureReason = "参加処理中に部屋が閉じられました。";
-          return;
-        }
-
-        if (room.status !== "waiting") {
-          failureReason = "その部屋は参加受付中ではありません。";
-          return;
-        }
-
-        room.players = room.players || {};
-
-        if (room.players[uid]) {
-          return room;
-        }
-
-        if (Object.keys(room.players).length >= 6) {
-          failureReason = "この部屋は6人で満員です。";
-          return;
-        }
-
-        const existingOrders = Object.values(room.players)
-          .map(p => Number(p && p.joinOrder) || 0);
-
-        const storedNext = Number(room.nextJoinOrder) || 0;
-        const maxExisting = existingOrders.length ? Math.max(...existingOrders) : 0;
-        const newOrder = Math.max(storedNext, maxExisting) + 1;
-
-        room.nextJoinOrder = newOrder;
-        room.players[uid] = roomPlayerData("GUEST", newOrder);
-
-        return room;
+      // 2. 入室順位だけを独立したtransactionで採番
+      // whole-room transactionを避け、別ブラウザ初回参加時のnull誤判定を防ぐ
+      const orderRef = roomRef.child("nextJoinOrder");
+      const orderResult = await orderRef.transaction(current => {
+        const n = Number(current);
+        return Number.isFinite(n) && n >= 0 ? n + 1 : 1;
       });
 
-      if (!result.committed) {
-        throw new Error(failureReason || "部屋への参加に失敗しました。");
+      if (!orderResult.committed) {
+        throw new Error("入室順位の取得に失敗しました。");
       }
+
+      const newOrder = Number(orderResult.snapshot.val());
+
+      // 3. 採番中に部屋が閉じられていないか再確認
+      const latestSnap = await roomRef.once("value");
+
+      if (!latestSnap.exists()) {
+        throw new Error("参加処理中に部屋が閉じられました。");
+      }
+
+      const latestRoom = latestSnap.val() || {};
+
+      if (latestRoom.status !== "waiting") {
+        throw new Error("その部屋は参加受付中ではありません。");
+      }
+
+      const latestPlayers = latestRoom.players || {};
+
+      if (latestPlayers[uid]) {
+        return code;
+      }
+
+      if (Object.keys(latestPlayers).length >= 6) {
+        throw new Error("この部屋は6人で満員です。");
+      }
+
+      // 4. 自分のプレイヤーデータだけを書き込む
+      await roomRef.child("players/" + uid).set(
+        roomPlayerData("GUEST", newOrder)
+      );
 
       return code;
     }
