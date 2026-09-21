@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>モンパッチ v2.67</title>
+<title>モンパッチ v2.68</title>
 <style>
 :root{
  --bg:#10141a; --panel:#1a212b; --text:#f5f7fa; --sub:#aeb8c5;
@@ -1347,6 +1347,18 @@ button,
   min-height:48px!important;
   padding:9px 18px!important;
   background-size:100% 100%!important;
+}
+</style>
+
+
+<style id="monpatchVisualV268FrameFix">
+/* Ver.2.68: frame-only adjustment.
+   - Puzzle/board backing removed.
+   - Mechanical frame asset is thinner.
+   - Board area and block size remain unchanged. */
+.boardWrap::after{
+  display:none!important;
+  background:none!important;
 }
 </style>
 
