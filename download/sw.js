@@ -1,4 +1,4 @@
-const CACHE_NAME = "monpatch-download-2.64.0";
+const CACHE_NAME = "monpatch-download-2.65.0";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -17,7 +17,24 @@ const APP_FILES = [
   "./js/multi.js",
   "./js/profile.js",
   "./js/single.js",
-  "./js/tutorial.js"
+  "./js/tutorial.js",
+  "./assets/bg-defense.png",
+  "./assets/blocks/red.png",
+  "./assets/blocks/blue.png",
+  "./assets/blocks/green.png",
+  "./assets/blocks/yellow.png",
+  "./assets/blocks/purple.png",
+  "./assets/blocks/arrow-h.png",
+  "./assets/blocks/arrow-v.png",
+  "./assets/blocks/asteroid.png",
+  "./assets/blocks/black-hole.png",
+  "./assets/blocks/chain.png",
+  "./assets/blocks/em-red.png",
+  "./assets/blocks/em-yellow.png",
+  "./assets/ui/board-frame.png",
+  "./assets/ui/button.png",
+  "./assets/ui/button-pill.png",
+  "./assets/ui/panel.png"
 ];
 
 self.addEventListener("install", event => {

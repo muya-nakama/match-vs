@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>モンパッチ v2.63</title>
+<title>モンパッチ v2.65</title>
 <style>
 :root{
  --bg:#10141a; --panel:#1a212b; --text:#f5f7fa; --sub:#aeb8c5;
@@ -1099,6 +1099,136 @@ html,body{
 }
 </style>
 
+
+<style id="monpatchVisualV265">
+/* Ver.2.65 visual integration */
+html,body{background:#07101b!important}
+body{
+  background-image:linear-gradient(rgba(4,10,18,.34),rgba(4,10,18,.44)),url("assets/bg-defense.png")!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-attachment:fixed!important;
+}
+.titleScreen,.testerScreen,.infoOverlay,.rankingOverlay,.tutorialOverlay,.menuOverlay,.resultScreen{
+  background-color:rgba(3,8,15,.62)!important;
+}
+.titleCard,.resultCard,.menuPanel,.rankingPanel,.infoPanel,.tutorialShell,.singleLaunchCard{
+  background:rgba(6,14,25,.84)!important;
+  border:1px solid rgba(99,226,255,.22)!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34)!important;
+}
+.singleSection,.specialShapeCard,.resultRankingBox{
+  background:rgba(3,9,17,.56)!important;
+  border-color:rgba(99,226,255,.12)!important;
+}
+
+/* normal blocks */
+.tile.c0,.tile.c1,.tile.c2,.tile.c3,.tile.c4,
+.tile.specialTile{
+  background-color:transparent!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.tile.c0{background-image:url("assets/blocks/red.png")!important}
+.tile.c1{background-image:url("assets/blocks/blue.png")!important}
+.tile.c2{background-image:url("assets/blocks/green.png")!important}
+.tile.c3{background-image:url("assets/blocks/yellow.png")!important}
+.tile.c4{background-image:url("assets/blocks/purple.png")!important}
+.tile.specialTile.lineH{background-image:url("assets/blocks/arrow-h.png")!important}
+.tile.specialTile.lineV{background-image:url("assets/blocks/arrow-v.png")!important}
+.tile.specialTile.bomb{background-image:url("assets/blocks/asteroid.png")!important}
+.tile.specialTile.flower{background-image:url("assets/blocks/black-hole.png")!important}
+.tile.specialTile>.mark{font-size:0!important}
+
+/* blocker overlays */
+.tile{position:relative}
+.tile .blockerMark{
+  position:absolute!important;
+  inset:-2px!important;
+  width:auto!important;height:auto!important;
+  display:block!important;
+  font-size:0!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  pointer-events:none!important;
+  z-index:9!important;
+}
+.tile.chainLocked .blockerMark{background-image:url("assets/blocks/chain.png")!important}
+.tile.ice2 .blockerMark{background-image:url("assets/blocks/em-red.png")!important}
+.tile.ice1 .blockerMark{background-image:url("assets/blocks/em-yellow.png")!important}
+.tile.iceTriggerTile{
+  background:rgba(18,30,43,.7) url("assets/blocks/em-red.png") center/80% 80% no-repeat!important;
+  border:1px solid rgba(99,226,255,.28)!important;
+}
+.tile.iceTriggerTile>.mark{font-size:0!important}
+
+/* board backing + mechanical frame */
+.boardWrap{
+  padding:18px!important;
+  isolation:isolate;
+}
+.boardWrap::after{
+  content:"";
+  position:absolute;
+  inset:14px;
+  z-index:0;
+  border-radius:18px;
+  background:rgba(255,255,255,.20);
+  pointer-events:none;
+}
+.boardWrap::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  background:url("assets/ui/board-frame.png") center/100% 100% no-repeat;
+  pointer-events:none;
+}
+.boardWrap .board{position:relative;z-index:1}
+.boardWrap .fx{z-index:4}
+
+/* buttons: metal image background, text stays HTML */
+button,
+.startBtn,.singleMainBtn,.singleWideBtn,.singleOptionBtn,.singleSubBtn,
+.compactActionBtn,.rankingActionBtn,.freePlayBtn,.toolActionBtn,.historyActionBtn,
+.gameMenuBtn,.gameTitleBtn,.infoLinkBtn,.rankingMenuBtn,.rankingClose,
+.rankingDurationBtn,.rankingModeBtn,.tutorialExit,.menuClose,.audioLevelBtn,.summonBtn{
+  background-color:transparent!important;
+  background-image:url("assets/ui/button.png")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+  color:#f4fbff!important;
+  border:0!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.85);
+  box-shadow:none!important;
+}
+button:active{transform:scale(.975)}
+button:disabled{filter:grayscale(.65) brightness(.62);opacity:.68!important}
+.toggleBtn.on,.rankingDurationBtn.selected,.rankingModeBtn.selected,.summonBtn.active{
+  filter:brightness(1.18) saturate(1.25);
+  outline:2px solid rgba(79,225,255,.72)!important;
+  outline-offset:-3px;
+}
+.toggleBtn.off{filter:brightness(.68) saturate(.65)}
+.durationSelect{
+  background:rgba(7,17,29,.92)!important;
+  color:#fff!important;
+  border:1px solid rgba(87,218,255,.35)!important;
+}
+
+/* keep compact HUD readable */
+.score,.timerBox,.chainBox{
+  background:rgba(3,10,19,.88)!important;
+  border:1px solid rgba(87,218,255,.20);
+}
+</style>
+
 </head>
 <body>
 
@@ -1247,18 +1377,18 @@ html,body{
   </div>
 
   <div class="specialRefGroup">
-   <h3>花　5個直線</h3>
+   <h3>ブラックホール　5個直線</h3>
    <div class="specialShapeRow">
-    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">5個直線 → 🌸</div></div>
+    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="tile c4 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">5個直線 → ブラックホール</div></div>
    </div>
   </div>
 
   <div class="specialRefGroup">
-   <h3>爆弾</h3>
+   <h3>小惑星</h3>
    <div class="specialShapeRow">
-    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c3 refOrb"></div><div class="tile c3 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c3 refOrb"></div><div class="tile c3 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">2×2（4個の塊）→ 💣</div></div>
-    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="tile c2 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c2 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c2 refOrb"></div><div class="tile c2 refOrb"></div><div class="tile c2 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">L字 → 💣</div></div>
-    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c0 refOrb"></div><div class="tile c0 refOrb"></div><div class="tile c0 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c0 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c0 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">T字 → 💣</div></div>
+    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c3 refOrb"></div><div class="tile c3 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c3 refOrb"></div><div class="tile c3 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">2×2（4個の塊）→ 小惑星</div></div>
+    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="tile c2 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c2 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c2 refOrb"></div><div class="tile c2 refOrb"></div><div class="tile c2 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">L字 → 小惑星</div></div>
+    <div class="specialShapeCard"><div class="refShapeGrid"><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c0 refOrb"></div><div class="tile c0 refOrb"></div><div class="tile c0 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c0 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="tile c0 refOrb"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div><div class="refBlank"></div></div><div class="specialShapeName">T字 → 小惑星</div></div>
    </div>
   </div>
  </div>
@@ -1280,9 +1410,9 @@ html,body{
 <div class="historyItem"><h3><span class="historyVersion">v2.56</span>シングル画面グループ分け</h3><p>「シングルプレイ」をカード上辺の見出しへ移動。通常プレイ、フリープレイ、ランキング・チュートリアル等の補助メニューをそれぞれ独立した領域に分けました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.55</span>チュートリアル盤面外補充を固定化</h3><p>各STEPで盤面外から落ちてくる補充ブロックまで事前に構築・検査する方式へ変更。補充後に通常マッチや特殊生成条件が残る配置を採用しないようにし、STEP 2の4直線が5直線へ伸びる問題と進行停止も修正しました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.54</span>チュートリアル特殊生成修正</h3><p>STEP 2/3の固定盤面を見直し、スワップ前に成立済みのマッチを置かず、操作後に4直線・5直線が確実に成立するよう修正しました。</p></div>
-<div class="historyItem"><h3><span class="historyVersion">v2.53</span>シングル画面・チュートリアル整理</h3><p>シングル入口をプレイ中心の構成へ整理。制限時間をセレクト式にし、特殊ブロックの最低生成形一覧を追加。チュートリアルに鎖・氷の解除方法を追加し、実演中の偶発マッチを抑止しました。</p></div>
+<div class="historyItem"><h3><span class="historyVersion">v2.53</span>シングル画面・チュートリアル整理</h3><p>シングル入口をプレイ中心の構成へ整理。制限時間をセレクト式にし、特殊ブロックの最低生成形一覧を追加。チュートリアルに鎖・電磁レーザーの解除方法を追加し、実演中の偶発マッチを抑止しました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.47</span>ミッション表示・成功演出</h3><p>ミッション枠を背景がうっすら見える白い半透明表示へ変更。ミッション達成時に専用SEを鳴らし、「ミッション成功！」を小さなアニメーション付きで1秒間表示します。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.46</span>妨害判定・ミッション表示の強化</h3><p>氷・鎖の反応条件を整理し、特殊効果で消えた通常ブロックから隣接解除が連鎖しないよう修正。特殊効果が妨害本体へ直撃した場合は反応します。ミッション枠、鎖・氷の妨害発動数、残り1撃の氷表示を追加し、リザルトとランキングにも妨害数を表示します。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.46</span>妨害判定・ミッション表示の強化</h3><p>電磁レーザー・鎖の反応条件を整理し、特殊効果で消えた通常ブロックから隣接解除が連鎖しないよう修正。特殊効果が妨害本体へ直撃した場合は反応します。ミッション枠、鎖・電磁レーザーの妨害発動数、残り1撃の電磁レーザー表示を追加し、リザルトとランキングにも妨害数を表示します。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.45</span>ランキングを妨害設定別に分離</h3><p>1〜10分の各ランキングを「妨害なし」「妨害あり」に分けて表示。プレイヤーネーム・制限時間・妨害設定が同じ記録は最高得点のみ維持するようにしました。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.44</span>タイトル下部の表示領域調整</h3><p>端末の戻る・ホーム操作領域でクレジットが隠れないよう、タイトル画面下部に安全な余白を追加。画面が低い端末ではタイトル全体を縦スクロールできるようにしました。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.43</span>タイトル背景追加</h3><p>タイトル画面にもゲーム中と同じ青いジグソー背景を表示。文字やボタンが読みやすいよう、暗い青のグラデーションを重ねました。</p></div>
@@ -1291,7 +1421,7 @@ html,body{
   <div class="historyItem"><h3><span class="historyVersion">v2.40</span>プレイヤーネーム保存</h3><p>タイトル画面にプレイヤーネーム設定を追加。保存した名前は端末内に保持され、次回以降のランキング登録時にデフォルト名として自動入力されます。</p></div>
     <div class="historyItem"><h3><span class="historyVersion">v2.39</span>ランキング導線変更</h3><p>ランキングをゲーム中メニューから外し、タイトル画面から直接確認できるように変更しました。</p></div>
     <div class="historyItem"><h3><span class="historyVersion">v2.38</span>共有ランキング追加</h3><p>通常プレイ終了後に名前を入力してスコア登録できる共有ランキングを追加。ゲームメニューから1〜10分別のTOP20を確認できます。フリープレイはランキング対象外です。</p></div>
-    <div class="historyItem"><h3><span class="historyVersion">v2.37</span>特殊ブロック同時生成修正</h3><p>1回の操作で複数の特殊生成条件が独立して成立した場合、それぞれの特殊ブロックを同時生成するよう修正しました。同じ成立形で条件が重なる場合は、花 ＞ 爆弾 ＞ 矢印の優先順位で1つに整理します。</p></div>
+    <div class="historyItem"><h3><span class="historyVersion">v2.37</span>特殊ブロック同時生成修正</h3><p>1回の操作で複数の特殊生成条件が独立して成立した場合、それぞれの特殊ブロックを同時生成するよう修正しました。同じ成立形で条件が重なる場合は、花 ＞ 小惑星 ＞ 矢印の優先順位で1つに整理します。</p></div>
     <div class="historyItem"><h3><span class="historyVersion">v2.36</span>チュートリアル修正</h3><p>フリープレイ整理時に欠落していたチュートリアル処理を復旧しました。8ステップの自動実演、一時停止・再開、終了、再生を再び利用できます。</p></div>
     <div class="historyItem"><h3><span class="historyVersion">v2.35</span>やり直しボタン撤去</h3><p>通常ゲーム・フリープレイともに「やり直し」ボタンを撤去し、ゲーム中の上部操作を「メニュー」と「タイトルへ」に整理しました。</p></div>
     <div class="historyItem"><h3><span class="historyVersion">v2.34</span>フリープレイ操作整理</h3><p>フリープレイ開始時のパスワード入力を撤去し、ボタン1タップで開始できるように変更。フリープレイ中は「やり直し」ボタンを非表示にしました。</p></div>
@@ -1301,32 +1431,32 @@ html,body{
     <div class="historyItem"><h3><span class="historyVersion">v2.30</span>チュートリアル文言を簡潔化</h3><p>「通常ゲームと同じ」「ゲーム本体と同じ」といった比較表現を削除し、画面上で起こることだけを説明する文章に整理しました。</p></div>
     <div class="historyItem"><h3><span class="historyVersion">v2.29</span>チュートリアル説明文を整理</h3><p>「通常ゲームと同じ処理」など実装寄りの表現をやめ、プレイヤーから見て何が起きるかをそのまま説明する文章に変更しました。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.28</span>チュートリアル一時停止</h3><p>自動チュートリアルに「一時停止 / 再開」ボタンを追加。停止中は次の自動操作や待ち時間の進行を止め、説明文を好きなだけ読めるようにしました。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.27</span>チュートリアル継続動作修正</h3><p>矢印・花・爆弾の生成後に盤面を作り直していた処理を廃止。生成された特殊ブロックをそのまま使って、続けて発動まで実演するように変更しました。チュートリアル中の偶発連鎖停止は継続します。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.27</span>チュートリアル継続動作修正</h3><p>矢印・花・小惑星の生成後に盤面を作り直していた処理を廃止。生成された特殊ブロックをそのまま使って、続けて発動まで実演するように変更しました。チュートリアル中の偶発連鎖停止は継続します。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.26</span>チュートリアル動作修正</h3><p>自動操作前の表示にヒント移動アニメーションを流用していたため、ブロックが一度動いて戻ってから本操作するように見える問題を修正。対象2マスは発光表示だけに変更し、移動は本体のスワップ処理のみで実行します。またチュートリアル中は落下後の偶発連鎖を停止しました。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.25</span>チュートリアル処理を本体と統合</h3><p>チュートリアル専用の疑似盤面・疑似消去処理を廃止。固定配置だけを用意し、実演そのものはゲーム本体と同じスワップ、マッチ判定、特殊生成、消去、落下、巻き込み、特殊コンボ処理を呼び出す方式へ変更しました。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.24</span>花コンボのチュートリアル追加</h3><p>自動チュートリアルに花＋矢印、花＋爆弾、花＋花の実演を追加。特殊ブロック同士の代表的なコンボを順番に確認できるようにしました。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.23</span>チュートリアル消去処理修正</h3><p>特殊ブロック生成時、材料になったブロックが消去演出後に再表示されてしまう問題を修正。矢印・花・爆弾の生成時に、特殊ブロックへ変化する1個を除いた材料ブロックが正しく消去・補充されるようにしました。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.24</span>花コンボのチュートリアル追加</h3><p>自動チュートリアルに花＋矢印、花＋小惑星、花＋花の実演を追加。特殊ブロック同士の代表的なコンボを順番に確認できるようにしました。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.23</span>チュートリアル消去処理修正</h3><p>特殊ブロック生成時、材料になったブロックが消去演出後に再表示されてしまう問題を修正。矢印・花・小惑星の生成時に、特殊ブロックへ変化する1個を除いた材料ブロックが正しく消去・補充されるようにしました。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.22</span>チュートリアル配置修正</h3><p>矢印生成と花生成の実演で、周囲の同色ブロックまでつながって見えていた配置を修正。矢印は正確に4個、花は正確に5個の直列として表示されます。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.21</span>自動チュートリアル</h3><p>タイトルメニューに自動実演チュートリアルを追加。3個消し、4個直列の矢印、5個直列の花、2×2の爆弾、特殊ブロック同士のコンボを固定盤面で順番に実演します。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.20</span>テスター配置整理</h3><p>特殊ブロック同士を合わせた時の動作確認に絞り、左右順や矢印方向の重複を削除。花＋花、花＋爆弾、花＋矢印、爆弾＋爆弾、爆弾＋矢印、矢印＋矢印の6組に整理。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.21</span>自動チュートリアル</h3><p>タイトルメニューに自動実演チュートリアルを追加。3個消し、4個直列の矢印、5個直列の花、2×2の小惑星、特殊ブロック同士のコンボを固定盤面で順番に実演します。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.20</span>テスター配置整理</h3><p>特殊ブロック同士を合わせた時の動作確認に絞り、左右順や矢印方向の重複を削除。花＋花、花＋小惑星、花＋矢印、小惑星＋小惑星、小惑星＋矢印、矢印＋矢印の6組に整理。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.19</span>タイトル復帰修正</h3><p>ゲーム中の「タイトルへ」ボタンが反応しない不具合を修正。通常モード・テスターモードのどちらからでもタイトル画面へ戻れるようにしました。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.18</span>テスターモード</h3><p>ゲーム内にパスワード式のテスター用モードを追加。9×7盤面・時間無制限で、花・爆弾・縦横矢印の特殊ブロック全組み合わせを固定配置からすぐ確認可能。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.17</span>花の巻き込み発動</h3><p>特殊効果に巻き込まれた花が、盤面にある通常色からランダム1色を選び、伝播演出つきでその色を全消しするよう変更。爆弾・矢印の巻き込み発動も継続。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.16</span>十字爆弾対応</h3><p>横3個以上と縦3個以上が交差する十字形でも爆弾を生成。連鎖中に成立したL字・T字・十字も検出するよう判定を強化。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.18</span>テスターモード</h3><p>ゲーム内にパスワード式のテスター用モードを追加。9×7盤面・時間無制限で、花・小惑星・縦横矢印の特殊ブロック全組み合わせを固定配置からすぐ確認可能。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.17</span>花の巻き込み発動</h3><p>特殊効果に巻き込まれた花が、盤面にある通常色からランダム1色を選び、伝播演出つきでその色を全消しするよう変更。小惑星・矢印の巻き込み発動も継続。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.16</span>十字小惑星対応</h3><p>横3個以上と縦3個以上が交差する十字形でも小惑星を生成。連鎖中に成立したL字・T字・十字も検出するよう判定を強化。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.15</span>ゲーム内情報ページ</h3><p>トップ画面から「遊び方・ルール」「更新履歴」を開けるように変更。長いルール説明をゲーム画面から移動。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.14</span>音量・操作UI調整</h3><p>BGMを少し大きく、SEを全体的に控えめに調整。ゲーム中に「タイトルへ」ボタンを追加。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.13</span>音声実装</h3><p>BGM、連鎖1〜4段階SE、決定・MOVE・CANCEL、爆弾・花・矢印の各SEを実装。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.13</span>音声実装</h3><p>BGM、連鎖1〜4段階SE、決定・MOVE・CANCEL、小惑星・花・矢印の各SEを実装。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.12</span>ビジュアル草案</h3><p>球体風の5色ブロックと、縦向きにしたパズル背景を導入。素材クレジットを追加。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.11</span>花の伝播演出</h3><p>花＋爆弾、花＋矢印、花＋花で、伝播元から伝播先へ線が伸びるモーションを追加。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.11</span>花の伝播演出</h3><p>花＋小惑星、花＋矢印、花＋花で、伝播元から伝播先へ線が伸びるモーションを追加。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.10</span>ブロック配色調整</h3><p>5色ブロックの彩度・明度を上げ、より明るく鮮やかな見た目へ調整。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.9</span>花コンボ調整</h3><p>花＋爆弾をランダム8か所へ変更。花＋矢印は6本のまま、縦横がランダムに混在するよう変更。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.9</span>花コンボ調整</h3><p>花＋小惑星をランダム8か所へ変更。花＋矢印は6本のまま、縦横がランダムに混在するよう変更。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.8</span>5色化</h3><p>通常ブロックを6色から5色へ変更し、参考画面に近い配色へ調整。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.7</span>ヒント・妨害</h3><p>4秒無操作ヒント、手詰まり時の盤面再生成＋3秒ペナルティ、氷・ミッション・鎖の擬似妨害を実装。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.7</span>ヒント・妨害</h3><p>4秒無操作ヒント、手詰まり時の盤面再生成＋3秒ペナルティ、電磁レーザー・ミッション・鎖の擬似妨害を実装。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.6</span>同時消去修正</h3><p>特殊発動と同じ操作で成立した通常マッチを、特殊効果と同じタイミングで消すよう修正。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.5</span>爆弾範囲修正</h3><p>単体爆弾の消去範囲を5×5ひし形（マンハッタン距離2）に修正。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.4</span>爆弾＋爆弾修正</h3><p>爆弾＋爆弾を7×7ひし形（マンハッタン距離3）に修正。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.5</span>小惑星範囲修正</h3><p>単体小惑星の消去範囲を5×5ひし形（マンハッタン距離2）に修正。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.4</span>小惑星＋小惑星修正</h3><p>小惑星＋小惑星を7×7ひし形（マンハッタン距離3）に修正。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.3</span>無色特殊ブロック</h3><p>特殊ブロックを無色化し、通常色マッチに参加しない仕様へ変更。花＋特殊の複合効果を追加。</p></div>
-  <div class="historyItem"><h3><span class="historyVersion">v2.2</span>特殊表示改善</h3><p>矢印・爆弾・花の記号表示を改善。</p></div>
+  <div class="historyItem"><h3><span class="historyVersion">v2.2</span>特殊表示改善</h3><p>矢印・小惑星・花の記号表示を改善。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.1</span>9×7盤面修正</h3><p>9×7化に伴う残存参照を修正し、盤面動作を安定化。</p></div>
   <div class="historyItem"><h3><span class="historyVersion">v2.0</span>9×7盤面</h3><p>参考ゲームに合わせて盤面サイズを9×7へ変更。</p></div>
  </div>
