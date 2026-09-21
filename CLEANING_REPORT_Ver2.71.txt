@@ -1,0 +1,47 @@
+モンパッチ Ver2.71 コードクレンジング第1段階 検証報告
+
+基準リポジトリ
+- https://github.com/muya-nakama/match-vs
+- 取得時HEAD: 5f32cdbe31510e9e3d5d9d76ea865191dc3e5c42
+- 取得時の実体バージョン: Ver2.69
+
+統合
+- 指示書に記載されたVer2.70確定仕様を統合
+- 盤面背景: rgba(0,0,0,0.70)
+- 黒背景入りブロック画像を透過PNGへ変換
+- 通常ブロックとiceTriggerTileのCSS影を無効化
+
+game-core.js
+- 未参照関数を6個削除
+  formatTime / resetTesterBoard / squareContaining / matchedBentShape /
+  fiveShapeContaining / chooseSpecial
+- render()の盤面63要素をDocumentFragmentへ構築し、一括置換する方式へ変更
+- 空文字を設定するだけだった特殊ブロック分岐を削除
+- 通常版とPWA版に同じクレンジングを反映
+- PWA版だけに存在するオフラインランキング制御は維持
+
+game.html
+- 過去版の金属フレームCSS、白背景CSS、相互上書き用CSSを削除
+- 現在有効な盤面CSSを1か所へ集約
+- 盤面・ブロックの寸法指定は変更なし
+
+バージョン同期
+- GAME_VERSION: 2.71
+- download/version.json: 2.71.0
+- download/pwa.js: 2.71.0
+- Service Worker cache: monpatch-download-2.71.0
+
+検証結果
+- js/game-core.js: node --check 合格
+- download/js/game-core.js: node --check 合格
+- js/multi.js / download/js/multi.js: node --check 合格
+- download/pwa.js / download/sw.js: node --check 合格
+- 削除した6関数のリポジトリ全体での呼び出しが0件であることを確認
+- 撤去対象のboard-frame参照とrgba(0,0,0,.30)がgame.htmlに残っていないことを確認
+- 通常版/PWA版のランキング差分を確認し維持
+- ブラウザ自動テストは実行環境にブラウザ本体がなく未実施
+
+次段階候補
+- js/multi.jsの重複状態更新とFirebase購読解除の監査
+- ui-sfx.jsの埋め込み音声と再生インスタンス管理の整理
+- game.html内の残存する旧CSS上書き層の追加統合

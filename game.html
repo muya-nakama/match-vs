@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>モンパッチ v2.69</title>
+<title>モンパッチ v2.71</title>
 <style>
 :root{
  --bg:#10141a; --panel:#1a212b; --text:#f5f7fa; --sub:#aeb8c5;
@@ -1158,33 +1158,9 @@ body{
 .tile.iceTriggerTile{
   background:rgba(18,30,43,.7) url("assets/blocks/em-red.png") center/80% 80% no-repeat!important;
   border:1px solid rgba(99,226,255,.28)!important;
+  box-shadow:none!important;
 }
 .tile.iceTriggerTile>.mark{font-size:0!important}
-
-/* board backing + mechanical frame */
-.boardWrap{
-  padding:18px!important;
-  isolation:isolate;
-}
-.boardWrap::after{
-  content:"";
-  position:absolute;
-  inset:14px;
-  z-index:0;
-  border-radius:18px;
-  background:rgba(255,255,255,.20);
-  pointer-events:none;
-}
-.boardWrap::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index:2;
-  background:url("assets/ui/board-frame.png") center/100% 100% no-repeat;
-  pointer-events:none;
-}
-.boardWrap .board{position:relative;z-index:1}
-.boardWrap .fx{z-index:4}
 
 /* buttons: metal image background, text stays HTML */
 button,
@@ -1253,82 +1229,11 @@ button,
 .singleMainBtn,.singleWideBtn,.freePlayBtn{min-height:52px!important}
 .rankingDurationBtn,.rankingModeBtn,.singleOptionBtn,.singleSubBtn{min-height:42px!important}
 
-/* Board frame: frame must surround the WHOLE 9x7 board, not only the middle rows */
-.boardWrap{
-  position:relative!important;
-  padding:18px!important;
-  box-sizing:content-box!important;
-  isolation:isolate!important;
-}
-.boardWrap::after{
-  content:""!important;
-  position:absolute!important;
-  inset:8px!important;
-  z-index:0!important;
-  border-radius:16px!important;
-  background:rgba(255,255,255,.20)!important;
-  pointer-events:none!important;
-}
-.boardWrap::before{
-  content:""!important;
-  position:absolute!important;
-  left:-8px!important;
-  right:-8px!important;
-  top:-8px!important;
-  bottom:-8px!important;
-  z-index:3!important;
-  background-image:url("assets/ui/board-frame.png")!important;
-  background-size:100% 100%!important;
-  background-position:center!important;
-  background-repeat:no-repeat!important;
-  pointer-events:none!important;
-}
-.boardWrap .board{position:relative!important;z-index:1!important}
-.boardWrap .fx{z-index:4!important}
-
-/* Keep tiles above backing but inside frame */
-.tile{z-index:1}
 </style>
 
 
-<style id="monpatchVisualV267GameFix">
-/* Ver.2.67: game-body-only layout correction */
-
-/* Do NOT enlarge boardWrap with padding. v2.67 made the 9x7 board overflow horizontally. */
-.boardWrap{
-  position:relative!important;
-  width:max-content!important;
-  margin:auto!important;
-  padding:0!important;
-  box-sizing:border-box!important;
-  isolation:isolate!important;
-}
-
-/* white 20% backing exactly behind the whole board */
-.boardWrap::after{
-  content:""!important;
-  position:absolute!important;
-  inset:-4px!important;
-  z-index:0!important;
-  border-radius:14px!important;
-  background:rgba(255,255,255,.20)!important;
-  pointer-events:none!important;
-}
-
-/* cropped frame now surrounds the whole 9x7 board */
-.boardWrap::before{
-  content:""!important;
-  position:absolute!important;
-  left:-10px!important;
-  right:-10px!important;
-  top:-10px!important;
-  bottom:-10px!important;
-  z-index:3!important;
-  background:url("assets/ui/board-frame.png") center/100% 100% no-repeat!important;
-  pointer-events:none!important;
-}
-.boardWrap .board{position:relative!important;z-index:1!important}
-.boardWrap .fx{z-index:4!important}
+<style id="monpatchGameControls">
+/* In-game controls */
 
 /* Header action buttons: keep Japanese labels on one line */
 .gameMenuBtn,.gameTitleBtn{
@@ -1351,24 +1256,8 @@ button,
 </style>
 
 
-<style id="monpatchVisualV268FrameFix">
-/* Ver.2.69: frame-only adjustment.
-   - Puzzle/board backing removed.
-   - Mechanical frame asset is thinner.
-   - Board area and block size remain unchanged. */
-.boardWrap::after{
-  display:none!important;
-  background:none!important;
-}
-</style>
-
-
-
-<style id="monpatchVisualV269BoardBg">
-/* Ver.2.69: remove mechanical frame and place a 30% transparent backing behind the board only.
-   - No board enlargement.
-   - No block size change.
-   - Only the metal frame is removed, and a subtle translucent backing is added behind the puzzle area. */
+<style id="monpatchVisualV271Board">
+/* Final board presentation: no metal frame, no tile shadow, 70% opaque backing. */
 .boardWrap{
   position:relative!important;
   width:max-content!important;
@@ -1389,7 +1278,7 @@ button,
   inset:0!important;
   z-index:0!important;
   border-radius:14px!important;
-  background:rgba(0,0,0,.30)!important;
+  background:rgba(0,0,0,.70)!important;
   pointer-events:none!important;
 }
 .boardWrap .board{position:relative!important;z-index:1!important}
