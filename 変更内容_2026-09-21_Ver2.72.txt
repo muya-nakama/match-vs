@@ -1,0 +1,42 @@
+モンパッチ Ver.2.72 変更記録
+作成日: 2026-09-21
+
+【変更概要】
+VS戦で使用するゲーム中BGMを「基地出撃５分前」へ差し替えました。
+通常版とPWA版の双方へ同じ音源を配置し、PWA版ではオフライン再生用キャッシュにも追加しました。
+
+【変更箇所】
+1. js/game-core.js / download/js/game-core.js
+   対象: bgmAudio初期化、GAME_VERSION
+   変更前: AUDIO_DATA.bgm（埋め込み旧BGM）を再生、バージョン2.71
+   変更後: 旧BGMを削除し、軽量化した「基地出撃５分前」の埋め込み音源を再生、バージョン2.72
+   影響: ゲーム開始時に流れるBGM。音量・ループ・停止処理は従来どおり。
+
+2. js/game-core.js / download/js/game-core.js 内のAUDIO_DATA.bgm
+   内容: 提供音源「基地出撃５分前.mp3」をゲーム配信用MP3へ軽量化（約66秒、約80kbps）して埋め込み。
+
+3. download/sw.js
+   対象: CACHE_NAME、APP_FILES
+   変更前: 2.71.0キャッシュ
+   変更後: 2.72.0キャッシュ（新BGMはgame-core.js内に含まれる）
+   影響: PWA版でオフライン時も新BGMを再生可能。
+
+4. index.html / download/index.html / game.html / download/game.html
+   対象: バージョン表示、BGMクレジット、更新履歴
+   変更前: Ver.2.71、旧BGM表記
+   変更後: Ver.2.72、「基地出撃５分前」表記、v2.72履歴追加
+
+5. download/pwa.js / download/version.json
+   対象: アプリ更新判定用バージョン
+   変更前: 2.71.0
+   変更後: 2.72.0
+
+6. DEVELOPMENT_RULES.md
+   追加: バージョン、定期クレンジング、成果物、GitHub反映、バックアップ、変更記録、外部AIレビューの共通運用ルール。
+
+【クレンジング予定】
+次回の必須クレンジング: Ver.2.80
+クレンジングまで: あと8回の0.01更新
+
+【補足】
+旧BGMの巨大な埋め込みデータは今回削除済みです。新BGMは通常版・PWA版それぞれのgame-core.jsへ埋め込み、単体配布とオフライン動作を維持します。

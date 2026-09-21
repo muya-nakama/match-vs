@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>モンパッチ v2.71</title>
+<title>モンパッチ v2.73</title>
+<link rel="preload" href="assets/blocks/arrow-h.png" as="image">
+<link rel="preload" href="assets/blocks/arrow-v.png" as="image">
+<link rel="preload" href="assets/blocks/asteroid.png" as="image">
+<link rel="preload" href="assets/blocks/black-hole.png" as="image">
 <style>
 :root{
  --bg:#10141a; --panel:#1a212b; --text:#f5f7fa; --sub:#aeb8c5;
@@ -1463,6 +1467,8 @@ button,
    <button class="infoClose" data-close-info type="button">戻る</button>
   </div>
 
+<div class="historyItem"><h3><span class="historyVersion">v2.73</span>チュートリアル名称・特殊生成表示</h3><p>チュートリアルに残っていた「花」「爆弾」を「ブラックホール」「小惑星」へ統一。特殊ブロック画像を先読みし、初回生成時の表示待ちを軽減しました。</p></div>
+<div class="historyItem"><h3><span class="historyVersion">v2.72</span>VS戦BGMを変更</h3><p>ゲーム中のBGMを「基地出撃５分前」へ差し替え、PWA版でも同じBGMを再生するようにしました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.63</span>PWA版・オフラインプレイ</h3><p>ホーム画面へ追加できるPWA版を追加。通信できない場合はシングルプレイ・フリープレイ・チュートリアルを遊べますが、ランキング対象外となり、マルチ対戦とオンラインランキングは利用できません。</p></div>
               <div class="historyItem"><h3><span class="historyVersion">v2.61</span>通信切断時のリタイア判定</h3><p>マルチ対戦中に通信が切れたプレイヤーをリタイアとして記録し、対戦結果では得点にかかわらず敗北扱いになるよう変更。ルームIDのコピー・共有ボタンの高さも統一しました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.60</span>マルチ対戦の読み込み確認</h3><p>ゲーム本体の準備が完了するまでルーム作成・参加を無効化。読み込み失敗またはタイムアウト時に、ゲーム本体だけを再読み込みできるボタンを追加しました。</p></div>

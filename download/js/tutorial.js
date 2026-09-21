@@ -328,7 +328,7 @@ async function tutorialStep2(token){
 }
 
 async function tutorialStep3(token){
- tutorialSetText(3,"同じ色を5つ一直線にそろえると、花ブロックが生成されます。生成された花をそのまま通常ブロックと入れ替えると、その色のブロックを盤面からすべて消します。");
+ tutorialSetText(3,"同じ色を5つ一直線にそろえると、ブラックホールが生成されます。生成されたブラックホールをそのまま通常ブロックと入れ替えると、その色のブロックを盤面からすべて消します。");
  tutorialBaseBoard();
 
  // スワップ前は2+2。操作後だけ横5になるよう両端も固定する。
@@ -347,7 +347,7 @@ async function tutorialStep3(token){
 
  const flowerPos=findSpecialPosition("flower");
  if(!flowerPos){
-  setMsg("花生成を確認できなかったため次へ進みます");
+  setMsg("ブラックホール生成を確認できなかったため次へ進みます");
   return true;
  }
  const flowerTarget=findAdjacentMovableNormal(flowerPos);
@@ -358,7 +358,7 @@ async function tutorialStep3(token){
 }
 
 async function tutorialStep4(token){
- tutorialSetText(4,"同じ色を2×2にそろえると、爆弾が生成されます。生成された爆弾をそのまま動かすと、爆弾を中心とした範囲をまとめて消去します。");
+ tutorialSetText(4,"同じ色を2×2にそろえると、小惑星が生成されます。生成された小惑星をそのまま動かすと、小惑星を中心とした範囲をまとめて消去します。");
  tutorialBaseBoard();
  B[2][2]=make(0);
  B[2][3]=make(2); B[2][4]=make(2); B[2][5]=make(1);
@@ -378,28 +378,28 @@ async function tutorialStep4(token){
 }
 
 async function tutorialStep5(token){
- tutorialSetText(5,"特殊ブロック同士が隣り合っている時は、2つを入れ替えるとコンボが発生します。まずは爆弾＋矢印。太い十字状にまとめて消去します。");
+ tutorialSetText(5,"特殊ブロック同士が隣り合っている時は、2つを入れ替えるとコンボが発生します。まずは小惑星＋矢印。太い十字状にまとめて消去します。");
  tutorialComboBoard("bomb","lineH");
  await tutorialWait(1000,token);
  return tutorialAutoSwap({r:3,c:4},{r:3,c:5},token);
 }
 
 async function tutorialStep6(token){
- tutorialSetText(6,"花＋矢印では、盤面のいくつかの場所で矢印が発動し、縦や横の列をまとめて消去します。");
+ tutorialSetText(6,"ブラックホール＋矢印では、盤面のいくつかの場所で矢印が発動し、縦や横の列をまとめて消去します。");
  tutorialComboBoard("flower","lineH");
  await tutorialWait(1000,token);
  return tutorialAutoSwap({r:3,c:4},{r:3,c:5},token);
 }
 
 async function tutorialStep7(token){
- tutorialSetText(7,"花＋爆弾では、盤面のいくつかの場所で爆弾が発動し、広い範囲をまとめて消去します。");
+ tutorialSetText(7,"ブラックホール＋小惑星では、盤面のいくつかの場所で小惑星が発動し、広い範囲をまとめて消去します。");
  tutorialComboBoard("flower","bomb");
  await tutorialWait(1000,token);
  return tutorialAutoSwap({r:3,c:4},{r:3,c:5},token);
 }
 
 async function tutorialStep8(token){
- tutorialSetText(8,"花＋花では、盤面全体のブロックを一気に消去します。");
+ tutorialSetText(8,"ブラックホール＋ブラックホールでは、盤面全体のブロックを一気に消去します。");
  tutorialComboBoard("flower","flower");
  await tutorialWait(1000,token);
  return tutorialAutoSwap({r:3,c:4},{r:3,c:5},token);
