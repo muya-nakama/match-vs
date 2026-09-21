@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>モンパッチ</title>
+  <title>Meteor StrikeR</title>
   <style>
     :root{
       --bg:#10141a;
@@ -875,13 +875,18 @@ body,#topPage,#multiPage,.pageView{
 }
 </style>
 
+<style id="meteorStrikerV274">
+html,body,.battleGameScreen,.battleResultOverlay{background-image:linear-gradient(rgba(2,6,12,.38),rgba(2,6,12,.52)),url("assets/meteor-earth-bg.jpg")!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;background-attachment:fixed!important}
+.topBrandLogo{display:block;width:min(100%,560px);height:auto;margin:0 auto 4px;mix-blend-mode:screen;filter:drop-shadow(0 5px 14px #000)}
+#topPage>.card{background:rgba(4,11,20,.80)!important;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+</style>
 </head>
 <body>
   <main class="app">
     <section id="topPage" class="pageView active">
       <section class="card">
-      <h1>モンパッチ</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.73</div>
+      <img class="topBrandLogo" src="assets/meteor-striker-logo.jpg" alt="Meteor StrikeR">
+      <div style="color:#aeb8c5;font-size:11px;margin:-2px 0 10px;text-align:center">Ver.2.74</div>
       <div class="sub">
         シングルモードとオンライン対戦モードが遊べるマッチパズル。
       </div>
@@ -992,14 +997,14 @@ body,#topPage,#multiPage,.pageView{
   <div id="singleProfileFloat" class="miniProfile"></div>
   <section id="battleGameScreen" class="battleGameScreen" aria-hidden="true">
     <div class="battleTopBar">
-      <span id="gameModeTitle">モンパッチ</span>
+      <span id="gameModeTitle">Meteor StrikeR</span>
       <span id="battleRoomMini" class="roomMini">ROOM ------</span>
     </div>
     <div id="battleLoadOverlay" class="battleLoadOverlay">ゲームを準備しています…</div>
     <iframe
       id="battleGameFrame"
       class="battleGameFrame"
-      title="モンパッチ Battle Game"></iframe>
+      title="Meteor StrikeR Battle Game"></iframe>
   </section>
 
   <div id="battleResultOverlay" class="battleResultOverlay" aria-hidden="true">
