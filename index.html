@@ -756,13 +756,51 @@ body{
 }
 </style>
 
+
+<style id="monpatchVisualV265">
+body{
+  background:#07101b!important;
+  background-image:linear-gradient(rgba(4,10,18,.30),rgba(4,10,18,.42)),url("assets/bg-defense.png")!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-attachment:fixed!important;
+}
+.card,#topPage .card,#multiPage .card{
+  background:rgba(5,13,24,.84)!important;
+  border:1px solid rgba(87,218,255,.18)!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34)!important;
+}
+.row,.avatarSetup,.playerNameSetup,.modeChoice,#roomBox,.participantsWrap{
+  background:rgba(3,9,17,.58)!important;
+  border-color:rgba(87,218,255,.12)!important;
+}
+button{
+  background-color:transparent!important;
+  background-image:url("assets/ui/button.png")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+  color:#f4fbff!important;
+  border:0!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.85);
+  box-shadow:none!important;
+}
+button:active{transform:scale(.975)}
+button:disabled{filter:grayscale(.65) brightness(.62);opacity:.68!important}
+#singleTopBackBtn,#multiTopBackFixed,.battleReturnBtn,.miniProfile{
+  background-color:rgba(3,10,19,.88)!important;
+  border:1px solid rgba(87,218,255,.18)!important;
+}
+</style>
+
 </head>
 <body>
   <main class="app">
     <section id="topPage" class="pageView active">
       <section class="card">
       <h1>モンパッチ</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.64</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.65</div>
       <div class="sub">
         シングルモードとオンライン対戦モードが遊べるマッチパズル。
       </div>
