@@ -794,13 +794,94 @@ button:disabled{filter:grayscale(.65) brightness(.62);opacity:.68!important}
 }
 </style>
 
+
+<style id="monpatchVisualV266Fix">
+/* --- Ver.2.66: visual sizing + multi lobby fixes --- */
+body,#topPage,#multiPage,.pageView{
+  background-image:linear-gradient(rgba(4,10,18,.30),rgba(4,10,18,.42)),url("assets/bg-defense.png")!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+}
+#topPage,#multiPage{min-height:100vh!important}
+
+/* Buttons: keep enough vertical room for the mechanical frame */
+#topPage button,#multiPage button,
+#singleTopBackBtn,#multiTopBackFixed,.battleReturnBtn{
+  min-height:46px!important;
+  padding:10px 18px!important;
+  line-height:1.15!important;
+  background-color:transparent!important;
+  background-image:url("assets/ui/button.png")!important;
+  background-size:100% 100%!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+#topPage .modeSelect button{
+  min-height:58px!important;
+  min-width:260px!important;
+  padding:13px 24px!important;
+  font-size:16px!important;
+}
+#topPage .playerNameSetup button,
+#topPage .avatarSetup button,
+#singleTopBackBtn,#multiTopBackFixed{
+  min-height:42px!important;
+  padding:9px 15px!important;
+}
+
+/* Explicit multi implementation */
+#multiPage .card{
+  background:rgba(5,13,24,.84)!important;
+  border:1px solid rgba(87,218,255,.18)!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34)!important;
+}
+#multiPage .row,
+#multiPage #roomBox,
+#multiPage #joinRoomArea,
+#multiPage .participantsWrap{
+  background:rgba(3,9,17,.62)!important;
+  border:1px solid rgba(87,218,255,.12)!important;
+}
+#multiPage #createRoomBtn,
+#multiPage #joinRoomBtn,
+#multiPage #copyRoomBtn,
+#multiPage #shareRoomBtn,
+#multiPage #readyBtn,
+#multiPage #leaveRoomBtn,
+#multiPage #startBattleBtn,
+#multiPage #gameReloadBtn{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  min-height:48px!important;
+  padding:10px 18px!important;
+  background-image:url("assets/ui/button.png")!important;
+  background-size:100% 100%!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-color:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+}
+#multiPage .roomShareRow button{min-height:42px!important;height:42px!important}
+#multiPage .lobbyActionRow button{min-height:50px!important}
+#multiPage .miniProfile{
+  background:rgba(3,10,19,.88)!important;
+  border:1px solid rgba(87,218,255,.18)!important;
+}
+</style>
+
 </head>
 <body>
   <main class="app">
     <section id="topPage" class="pageView active">
       <section class="card">
       <h1>モンパッチ</h1>
-      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.65</div>
+      <div style="color:#7f8da0;font-size:11px;margin:-2px 0 10px">Ver.2.66</div>
       <div class="sub">
         シングルモードとオンライン対戦モードが遊べるマッチパズル。
       </div>
