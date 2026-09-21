@@ -406,30 +406,30 @@ async function tutorialStep8(token){
 }
 
 async function tutorialStep9(token){
- tutorialSetText(9,"<b>鎖</b><br>ミッションクリアで相手に送られる妨害ブロックです。動かすことができず、3つ揃っても消えません。<br><br><b>消し方</b><br>隣接したブロックが消える、または特殊ブロックの効果が当たると消去できます。");
+ tutorialSetText(9,"<b>ロック</b><br>ミッションクリアで相手に送られる妨害ブロックです。動かすことができず、3つ揃っても消えません。<br><br><b>解除方法</b><br>隣接したブロックが消える、または特殊ブロックの効果が当たると解除できます。");
  tutorialBaseBoard();
- // 鎖の左隣にだけ3個消しが成立する固定盤面。
+ // ロックの左隣にだけ3個消しが成立する固定盤面。
  B[3][1]=make(0); B[3][2]=make(0); B[3][3]=make(2);
  B[2][3]=make(0);
  B[3][4]=make(3); B[3][4].chain=true;
- tutorialResetState(); tutorialShowBoard("鎖の隣で3個消しを作ります");
+ tutorialResetState(); tutorialShowBoard("ロックの隣で3個消しを作ります");
  await tutorialWait(1000,token);
  return tutorialAutoSwap({r:2,c:3},{r:3,c:3},token);
 }
 
 async function tutorialStep10(token){
- tutorialSetText(10,"<b>氷</b><br>妨害用のブロック <span class='tutorialInlineTile tile c1'><span class='blockerMark'>🧊</span></span> を消すことで相手に送れる妨害ブロックです。動かすことができず、3つ揃っても消えません。<br><br><b>消し方</b><br>隣接したブロックを1回消すと氷が欠け、2回消すと完全に消去できます。また、特殊ブロックの効果は鎖と同じように働きます。");
+ tutorialSetText(10,"<b>電磁レーザー</b><br>妨害用のブロック <span class='tutorialInlineTile tile c1'><span class='blockerMark'>🧊</span></span> を消すことで相手に送れる妨害ブロックです。動かすことができず、3つ揃っても消えません。<br><br><b>解除方法</b><br>隣接したブロックを1回消すと防壁が弱まり、2回消すと完全に解除できます。また、特殊ブロックの効果はロックと同じように働きます。");
  tutorialBaseBoard();
  B[3][1]=make(0); B[3][2]=make(0); B[3][3]=make(2);
  B[2][3]=make(0);
  B[3][4]=make(3); B[3][4].ice=2;
- tutorialResetState(); tutorialShowBoard("1回目：隣接したブロックを消して氷を欠けさせます");
+ tutorialResetState(); tutorialShowBoard("1回目：隣接したブロックを消して電磁防壁を弱めます");
  await tutorialWait(1000,token);
  if(!await tutorialAutoSwap({r:2,c:3},{r:3,c:3},token))return false;
 
  if(!await tutorialWait(850,token))return false;
 
- // 2回目は同じ氷を1段階欠けた状態で安全な固定盤面に置き直す。
+ // 2回目は同じ電磁レーザーを1段階弱めた状態で安全な固定盤面に置き直す。
  tutorialBaseBoard();
  B[3][4]=make(3); B[3][4].ice=1;
  B[3][5]=make(1); B[3][6]=make(1); B[3][7]=make(2);
@@ -466,7 +466,7 @@ async function runTutorial(){
 
  if(token!==tutorialToken)return;
  tutorialStepEl.textContent="COMPLETE";
- tutorialTextEl.textContent="チュートリアルは以上です。基本の消し方、特殊ブロック、鎖・氷の解除方法を確認しました。";
+ tutorialTextEl.textContent="チュートリアルは以上です。基本の消し方、特殊ブロック、ロック・電磁レーザーの解除方法を確認しました。";
  tutorialFooter.textContent="「もう一度見る」で最初から再生できます。";
  tutorialDoneActions.classList.add("show");
 }

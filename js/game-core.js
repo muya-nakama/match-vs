@@ -974,11 +974,35 @@ function flowerFx(origin,targets,stagger=false){
  });
 }
 
+function blackHoleSuctionFx(origin,targets,stagger=false){
+ const center=cellCenter(origin.r,origin.c);
+ const core=document.createElement("div");
+ core.className="fxSuctionCore";
+ core.style.left=`${center.x}px`;core.style.top=`${center.y}px`;
+ fxEl.appendChild(core);
+
+ targets.forEach((target,i)=>{
+  const pos=cellCenter(target.r,target.c);
+  const source=boardEl.querySelector(`.tile[data-r="${target.r}"][data-c="${target.c}"]`);
+  if(!source||!pos.w)return;
+  const tile=document.createElement("div");
+  tile.className="fxSuctionTile";
+  tile.style.left=`${pos.x}px`;tile.style.top=`${pos.y}px`;
+  tile.style.width=`${pos.w}px`;tile.style.height=`${pos.h}px`;
+  tile.style.backgroundImage=getComputedStyle(source).backgroundImage;
+  tile.style.setProperty("--suck-x",`${center.x-pos.x}px`);
+  tile.style.setProperty("--suck-y",`${center.y-pos.y}px`);
+  tile.style.setProperty("--suck-spin",`${(i%2===0?1:-1)*(300+(i%5)*75)}deg`);
+  tile.style.setProperty("--suction-delay",`${stagger?Math.min(110,i*8):0}ms`);
+  fxEl.appendChild(tile);
+ });
+}
+
 async function playFlowerPropagation(origin,targets,{stagger=false,keep=false}={}){
  clearFx();
- flowerFx(origin,targets,stagger);
- const extra=stagger?90:0;
- await sleep(330+extra);
+ blackHoleSuctionFx(origin,targets,stagger);
+ const extra=stagger?110:0;
+ await sleep(560+extra);
  if(!keep)clearFx();
 }
 
@@ -986,9 +1010,9 @@ async function playFlowerPropagationDual(originA,originB,targets){
  clearFx();
  const left=[],right=[];
  targets.forEach((t,i)=>(i%2===0?left:right).push(t));
- flowerFx(originA,left,true);
- flowerFx(originB,right,true);
- await sleep(420);
+ blackHoleSuctionFx(originA,left,true);
+ blackHoleSuctionFx(originB,right,true);
+ await sleep(670);
  clearFx();
 }
 
@@ -1080,15 +1104,15 @@ async function clearCollapseOnly(clearSet,protectedKey=null,opts={}){
  // 爆弾・矢印の巻き込み発動
  if(triggers.length) await playTriggerFx(triggers);
 
- // 花の巻き込み発動：ランダム1色へ伝播線を伸ばしてから、その色を全消し。
+ // ブラックホールの巻き込み発動：ランダム1色を中心へ吸引してから全消し。
  for(const f of flowerTriggers){
   if(!f.targets.length)continue;
   playFlower();
-  setMsg(`花が巻き込まれた！ ${COLOR_NAMES[f.targetColor]}を全消し！`);
+  setMsg(`ブラックホールが巻き込まれた！ ${COLOR_NAMES[f.targetColor]}を全吸引！`);
   await playFlowerPropagation({r:f.r,c:f.c},f.targets,{stagger:true});
  }
 
- // 氷・鎖・氷トリガーは直接消えない。まず実際に消えるセルだけを確定する。
+ // 電磁レーザー・ロック・電磁レーザートリガーは直接消えない。
  const actual=new Set();
  for(const s of clearSet){
   const [r,c]=parseK(s),t=B[r]?.[c];
@@ -1212,7 +1236,7 @@ async function specialCombo(a,b,oldA,oldB){
  const center=b;
 
  if(oldA.special==="flower" && oldB.special==="flower"){
-  setMsg("花＋花：盤面全消し！");
+  setMsg("ブラックホール＋ブラックホール：盤面全吸引！");
   const targets=[];
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)targets.push({r,c});
   // 2つの花を伝播元にし、盤面全体へ線が伸びてから全消し。
@@ -1245,7 +1269,7 @@ async function specialCombo(a,b,oldA,oldB){
    }
    playFlower();
    await playFlowerPropagation(flowerPos,targets,{stagger:true});
-   setMsg("花：入れ替えた色を全消し！");
+   setMsg("ブラックホール：入れ替えた色を全吸引！");
    await clearCollapseOnly(clearSet,null,{suppressSpecialExpansion:false,skipFlowerKeys:new Set([K(flowerPos.r,flowerPos.c)])});
    await cascade();
    return true;
@@ -1257,7 +1281,7 @@ async function specialCombo(a,b,oldA,oldB){
 
   if(isLine(other.special)){
    const centers=randomPositions(6);
-   setMsg("花＋列消し：縦横ランダム6本発動！");
+   setMsg("ブラックホール＋矢印：縦横ランダム6本発動！");
    const fx=centers.map(p=>({
     r:p.r, c:p.c,
     special:Math.random()<0.5 ? "lineH" : "lineV"
@@ -1268,7 +1292,7 @@ async function specialCombo(a,b,oldA,oldB){
    await playTriggerFx(fx);
   }else if(other.special==="bomb"){
    const centers=randomPositions(8);
-   setMsg("花＋爆弾：ランダム8か所発動！");
+   setMsg("ブラックホール＋小惑星：ランダム8か所発動！");
    const fx=centers.map(p=>({r:p.r,c:p.c,special:"bomb"}));
    for(const p of centers)addAll(clearSet,bombSet(p.r,p.c,2));
    playFlower();

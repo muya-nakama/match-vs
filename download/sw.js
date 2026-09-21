@@ -1,4 +1,4 @@
-const CACHE_NAME = "monpatch-download-2.73.0";
+const CACHE_NAME = "meteor-striker-download-2.74.0";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -19,6 +19,8 @@ const APP_FILES = [
   "./js/single.js",
   "./js/tutorial.js",
   "./assets/bg-defense.png",
+  "./assets/meteor-earth-bg.jpg",
+  "./assets/meteor-striker-logo.jpg",
   "./assets/blocks/red.png",
   "./assets/blocks/blue.png",
   "./assets/blocks/green.png",
@@ -44,7 +46,7 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
   event.waitUntil(caches.keys().then(names => Promise.all(
-    names.filter(name => name.startsWith("monpatch-download-") && name !== CACHE_NAME).map(name => caches.delete(name))
+    names.filter(name => (name.startsWith("monpatch-download-") || name.startsWith("meteor-striker-download-")) && name !== CACHE_NAME).map(name => caches.delete(name))
   )).then(() => self.clients.claim()));
 });
 

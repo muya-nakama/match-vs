@@ -77,12 +77,12 @@
         shareRoomBtn?.addEventListener("click", async () => {
           if (!currentRoomCode) return;
 
-          const shareText = `モンパッチ\nルームID: ${currentRoomCode}`;
+          const shareText = `Meteor StrikeR\nルームID: ${currentRoomCode}`;
 
           try {
             if (navigator.share) {
               await navigator.share({
-                title: "モンパッチ",
+                title: "Meteor StrikeR",
                 text: shareText
               });
             } else {

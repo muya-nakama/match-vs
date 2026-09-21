@@ -1,6 +1,6 @@
 {
-  "name": "モンパッチ",
-  "short_name": "モンパッチ",
+  "name": "Meteor StrikeR",
+  "short_name": "StrikeR",
   "description": "シングルプレイとオンライン対戦が遊べるマッチパズル",
   "start_url": "./",
   "scope": "./",

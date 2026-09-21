@@ -1,6 +1,6 @@
 "use strict";
 
-// モンパッチ共通UI効果音 v2.63
+// Meteor StrikeR 共通UI効果音
 // ゲーム本体で使用中の「決定」「キャンセル」と同じ音源を使用。
 (() => {
   const DATA = {

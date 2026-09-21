@@ -77,7 +77,7 @@
         if (!w || !d) return false;
 
         gameMode = "single";
-        if (gameModeTitle) gameModeTitle.textContent = "モンパッチ シングル";
+        if (gameModeTitle) gameModeTitle.textContent = "Meteor StrikeR シングル";
 
         // 対戦用パッチが残っている場合は元へ戻す。
         try {

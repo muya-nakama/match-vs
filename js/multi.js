@@ -515,7 +515,7 @@
 
       resetLobbyUI();
       showTopPage();
-      if (gameModeTitle) gameModeTitle.textContent = "モンパッチ";
+      if (gameModeTitle) gameModeTitle.textContent = "Meteor StrikeR";
       if (battleRoomMini) battleRoomMini.textContent = "ROOM ------";
       window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -531,7 +531,7 @@
         gameMode = "battle";
         singleProfileFloat?.classList.remove("show");
         battleGameScreen?.classList.remove("singleModeView");
-        if (gameModeTitle) gameModeTitle.textContent = "モンパッチ Battle";
+        if (gameModeTitle) gameModeTitle.textContent = "Meteor StrikeR Battle";
 
         // 対戦時はソロ専用導線を隠す
         const gameTitleBtn = d.getElementById("gameTitleBtn");

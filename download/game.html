@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>モンパッチ v2.73</title>
+<title>Meteor StrikeR v2.74</title>
 <link rel="preload" href="assets/blocks/arrow-h.png" as="image">
 <link rel="preload" href="assets/blocks/arrow-v.png" as="image">
 <link rel="preload" href="assets/blocks/asteroid.png" as="image">
@@ -762,7 +762,7 @@ body{
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="モンパッチ">
+<meta name="apple-mobile-web-app-title" content="Meteor StrikeR">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 
 
@@ -1295,10 +1295,32 @@ button,
 .boardWrap .fx{z-index:4!important}
 </style>
 
+<style id="meteorStrikerV274">
+/* Ver.2.74: Meteor StrikeR visual identity and black-hole suction */
+html,body,
+.titleScreen,.testerScreen,.tutorialOverlay,.rankingOverlay,.infoOverlay,.menuOverlay,.resultScreen{
+  background-image:linear-gradient(rgba(2,6,12,.34),rgba(2,6,12,.48)),url("assets/meteor-earth-bg.jpg")!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-attachment:fixed!important;
+}
+.titleScreen{flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:10px}
+.meteorTitleLogo{display:block;width:min(94vw,620px);height:auto;margin:0 auto;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 6px 16px rgba(0,0,0,.95));flex:0 0 auto}
+.titleScreen .singleLaunchCard{margin:0 auto auto!important;background:rgba(4,11,20,.78)!important;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.fxSuctionCore{position:absolute;width:calc(var(--cell) * 1.35);height:calc(var(--cell) * 1.35);border:3px solid rgba(190,145,255,.9);border-radius:50%;transform:translate(-50%,-50%) scale(.45);background:radial-gradient(circle,#000 0 26%,#48126f 42%,rgba(132,61,210,.35) 60%,transparent 72%);box-shadow:0 0 14px 6px rgba(153,92,255,.8),0 0 30px 12px rgba(54,147,255,.36);animation:suctionCore .54s ease-in-out forwards}
+.fxSuctionTile{position:absolute;background-repeat:no-repeat;background-position:center;background-size:contain;transform:translate(-50%,-50%) rotate(0) scale(1);opacity:1;animation:suctionTile .44s cubic-bezier(.55,.02,.88,.32) forwards;animation-delay:var(--suction-delay,0ms)}
+@keyframes suctionCore{0%{opacity:.15;transform:translate(-50%,-50%) scale(.35) rotate(0)}40%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(90deg)}100%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(240deg)}}
+@keyframes suctionTile{0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) rotate(0) scale(1)}70%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--suck-x),var(--suck-y)) rotate(var(--suck-spin)) scale(.05)}}
+@media(max-height:720px){.meteorTitleLogo{width:min(76vw,430px)}.titleScreen{gap:4px}}
+@media(prefers-reduced-motion:reduce){.fxSuctionTile{animation-duration:.18s}.fxSuctionCore{animation-duration:.24s}}
+</style>
+
 </head>
 <body>
 
 <div id="titleScreen" class="titleScreen">
+ <img class="meteorTitleLogo" src="assets/meteor-striker-logo.jpg" alt="Meteor StrikeR">
  <div class="titleCard singleLaunchCard">
   <div class="singleCardLegend">シングルプレイ</div>
 
@@ -1467,6 +1489,7 @@ button,
    <button class="infoClose" data-close-info type="button">戻る</button>
   </div>
 
+<div class="historyItem"><h3><span class="historyVersion">v2.74</span>Meteor StrikeRへ移行</h3><p>地球背景をゲーム全体へ適用し、タイトル画面に正式ロゴを追加。ブクマ・PWA名を「Meteor StrikeR」へ統一しました。ブラックホールを吸引演出へ変更し、妨害名を「ロック」「電磁レーザー」へ更新しました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.73</span>チュートリアル名称・特殊生成表示</h3><p>チュートリアルに残っていた「花」「爆弾」を「ブラックホール」「小惑星」へ統一。特殊ブロック画像を先読みし、初回生成時の表示待ちを軽減しました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.72</span>VS戦BGMを変更</h3><p>ゲーム中のBGMを「基地出撃５分前」へ差し替え、PWA版でも同じBGMを再生するようにしました。</p></div>
 <div class="historyItem"><h3><span class="historyVersion">v2.63</span>PWA版・オフラインプレイ</h3><p>ホーム画面へ追加できるPWA版を追加。通信できない場合はシングルプレイ・フリープレイ・チュートリアルを遊べますが、ランキング対象外となり、マルチ対戦とオンラインランキングは利用できません。</p></div>
