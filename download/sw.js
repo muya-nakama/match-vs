@@ -1,12 +1,15 @@
-const CACHE_NAME = "monpatch-download-2.62.0";
+const CACHE_NAME = "monpatch-download-2.64.0";
 const APP_FILES = [
   "./",
   "./index.html",
   "./game.html",
   "./manifest.webmanifest",
-  "./icon.svg",
+  "./monpatch-icon-192.png",
+  "./monpatch-icon-512.png",
+  "./apple-touch-icon.png",
   "./pwa.js",
   "./version.json",
+  "./js/ui-sfx.js",
   "./js/app.js",
   "./js/bootstrap.js",
   "./js/game-core.js",
