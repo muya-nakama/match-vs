@@ -615,17 +615,17 @@ function render(dropMap=null, popSet=null){
   d.dataset.r=r; d.dataset.c=c;
   const m=document.createElement("span");
   m.className="mark";
-  if(t?.trigger==="ice") m.textContent="🧊";
-  else if(t?.special==="lineH") m.textContent="↔️";
-  else if(t?.special==="lineV") m.textContent="↕️";
-  else if(t?.special==="bomb") m.textContent="💣";
-  else if(t?.special==="flower") m.textContent="🌸";
+  if(t?.trigger==="ice") m.textContent="";
+  else if(t?.special==="lineH") m.textContent="";
+  else if(t?.special==="lineV") m.textContent="";
+  else if(t?.special==="bomb") m.textContent="";
+  else if(t?.special==="flower") m.textContent="";
   d.appendChild(m);
-  if(t?.chain){const o=document.createElement("span");o.className="blockerMark";o.textContent="⛓️";d.appendChild(o);}
+  if(t?.chain){const o=document.createElement("span");o.className="blockerMark";o.textContent="";d.appendChild(o);}
   else if((t?.ice||0)>0){
    const o=document.createElement("span");
    o.className="blockerMark"+(t.ice===1?" halfSnowMark":"");
-   o.textContent=(t.ice===2?"❄️":"❄");
+   o.textContent="";
    d.appendChild(o);
   }
   if(t)d.addEventListener("click",()=>tap(r,c));
@@ -1586,9 +1586,9 @@ async function trySwap(a,b){
       s.special==="lineV" ? "↕️" :
       s.special==="flower" ? "🌸" : "特殊")
     ).join(" ");
-    setMsg(`${specialTile.special==="bomb"?"爆弾":"列消し"}発動！＋ ${names}生成！`);
+    setMsg(`${specialTile.special==="bomb"?"小惑星":"列消し"}発動！＋ ${names}生成！`);
    }else{
-    setMsg(specialTile.special==="bomb" ? "爆弾発動！" : "列消し発動！");
+    setMsg(specialTile.special==="bomb" ? "小惑星発動！" : "列消し発動！");
    }
 
    protectedKey=null;
