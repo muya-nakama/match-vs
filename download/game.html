@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>モンパッチ v2.68</title>
+<title>モンパッチ v2.69</title>
 <style>
 :root{
  --bg:#10141a; --panel:#1a212b; --text:#f5f7fa; --sub:#aeb8c5;
@@ -1358,7 +1358,7 @@ button,
 
 
 <style id="monpatchVisualV268FrameFix">
-/* Ver.2.68: frame-only adjustment.
+/* Ver.2.69: frame-only adjustment.
    - Puzzle/board backing removed.
    - Mechanical frame asset is thinner.
    - Board area and block size remain unchanged. */
@@ -1366,6 +1366,40 @@ button,
   display:none!important;
   background:none!important;
 }
+</style>
+
+
+
+<style id="monpatchVisualV269BoardBg">
+/* Ver.2.69: remove mechanical frame and place a 30% transparent backing behind the board only.
+   - No board enlargement.
+   - No block size change.
+   - Only the metal frame is removed, and a subtle translucent backing is added behind the puzzle area. */
+.boardWrap{
+  position:relative!important;
+  width:max-content!important;
+  margin:auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  isolation:isolate!important;
+}
+.boardWrap::before{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}
+.boardWrap::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:0!important;
+  border-radius:14px!important;
+  background:rgba(0,0,0,.30)!important;
+  pointer-events:none!important;
+}
+.boardWrap .board{position:relative!important;z-index:1!important}
+.boardWrap .fx{z-index:4!important}
 </style>
 
 </head>
