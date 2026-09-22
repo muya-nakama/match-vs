@@ -1,0 +1,67 @@
+Meteor StrikeR 更新履歴
+
+==================================================
+Ver.2.75 / 2026-09-22
+==================================================
+
+概要
+- 横・縦の矢印ブロックへ、視認性を高める発光・明滅アニメーションを追加。
+- Ver.2.74完成後に追加されていた矢印発光を、正式なVer.2.75更新として整理。
+- 通常版、PWA版、ランキング送信値、PWA更新判定、Service Workerキャッシュ名をVer.2.75へ同期。
+- SHA256SUMS.txtを現行ファイル一式から再生成。
+
+変更ファイル
+- index.html
+- game.html
+- js/game-core.js
+- js/game-ui.js（既存の矢印発光実装をVer.2.75として正式化）
+- download/index.html
+- download/game.html
+- download/js/game-core.js
+- download/js/game-ui.js（既存の矢印発光実装をVer.2.75として正式化）
+- download/pwa.js
+- download/sw.js
+- download/version.json
+- SHA256SUMS.txt
+- CHANGELOG.txt
+
+変更箇所
+- index.html / download/index.html：画面表示をVer.2.75へ更新。
+- game.html / download/game.html：ブラウザタイトルをv2.75へ更新。
+- js/game-core.js / download/js/game-core.js：GAME_VERSIONを2.73から2.75へ更新。
+- download/pwa.js：APP_VERSIONを2.75.0へ更新。
+- download/sw.js：CACHE_NAMEをmeteor-striker-download-2.75.0へ更新。
+- download/version.json：versionを2.75.0へ更新。
+
+変更理由
+- 表示上はVer.2.74、ランキング送信値は2.73、矢印発光はVer.2.74完成後の追加という不整合を解消するため。
+- PWAの更新検知とキャッシュ切り替えを確実に行うため。
+
+テスト結果
+- JavaScript構文検査：合格。
+- version.json / manifest.webmanifest JSON解析：合格。
+- Service Workerキャッシュ対象ファイル存在確認：合格。
+- 通常版とPWA版の矢印発光コード一致確認：合格。
+- SHA-256照合：合格。
+- 実機および実ブラウザでの操作確認：未実施。
+
+バックアップ
+- GitHub上の更新前main：624e26f6f9070d9f561e9e84d245c7bc229650bd
+- GitHubへは未反映。
+
+クレンジング予定
+- 次回の定期クレンジングはVer.2.80。
+- Ver.2.75完成時点で、クレンジングまであと5回（2.76～2.80）。
+
+==================================================
+Ver.2.74 / 2026-09-22
+==================================================
+
+- ゲーム全体の背景を、宇宙から見た地球の新背景へ変更。
+- タイトル画面に正式ロゴ画像を追加。
+- ブラウザ、ブックマーク、PWAの表示名を「Meteor StrikeR」へ統一。
+- チュートリアル上の旧名称「鎖」を「ロック」、「氷」を「電磁レーザー」へ統一。
+- ブラックホール発動時の吸引演出を追加。
+- 通常版とPWA版へ反映。
+
+Ver.2.73以前の詳細は、既存の各バージョン変更内容TXTを参照。
