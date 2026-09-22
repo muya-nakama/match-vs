@@ -1,23 +1,23 @@
-const CACHE_NAME = "meteor-striker-download-2.76.0";
+const CACHE_NAME = "meteor-striker-download-2.77.0";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./game.html",
+  "./game.html?v=2.77.0",
   "./manifest.webmanifest",
   "./monpatch-icon-192.png",
   "./monpatch-icon-512.png",
   "./apple-touch-icon.png",
-  "./pwa.js",
+  "./pwa.js?v=2.77.0",
   "./version.json",
-  "./js/ui-sfx.js",
-  "./js/app.js",
-  "./js/bootstrap.js",
-  "./js/game-core.js",
-  "./js/game-ui.js",
-  "./js/multi.js",
-  "./js/profile.js",
-  "./js/single.js",
-  "./js/tutorial.js",
+  "./js/ui-sfx.js?v=2.77.0",
+  "./js/app.js?v=2.77.0",
+  "./js/bootstrap.js?v=2.77.0",
+  "./js/game-core.js?v=2.77.0",
+  "./js/game-ui.js?v=2.77.0",
+  "./js/multi.js?v=2.77.0",
+  "./js/profile.js?v=2.77.0",
+  "./js/single.js?v=2.77.0",
+  "./js/tutorial.js?v=2.77.0",
   "./assets/bg-defense.png",
   "./assets/meteor-earth-bg.jpg",
   "./assets/meteor-striker-logo.jpg",
@@ -42,6 +42,10 @@ const APP_FILES = [
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
   self.skipWaiting();
+});
+
+self.addEventListener("message", event => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {

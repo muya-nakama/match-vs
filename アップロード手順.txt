@@ -21,10 +21,14 @@ https://muya-nakama.github.io/match3/download/
 ・通信できない場合はシングルプレイ、フリープレイ、チュートリアルを利用できます。
 ・オフライン中はランキング対象外で、マルチ対戦とオンラインランキングは利用できません。
 ・オンライン復帰時に version.json の確認が成功するとオンライン機能を再開します。
-・新しい版がある場合は更新ボタンを表示し、更新完了までオンライン機能を停止します。
+・新しい版がある場合はトップ表示時に自動更新し、更新完了までオンライン機能を停止します。
+・自動更新に失敗した場合だけ、手動の更新ボタンを表示します。
 
 【更新時の必須作業】
 ・download/version.json の version を上げる
 ・download/pwa.js の APP_VERSION を同じ値へ変更する
 ・download/sw.js の CACHE_NAME を同じ版へ変更する
+・index.html / download/index.html / game.html / download/game.html のローカルJSに付けた ?v= を同じ版へ変更する
+・js/single.js / download/js/single.js の game.html?v= を同じ版へ変更する
+・download/sw.js のAPP_FILESに付けた ?v= を同じ版へ変更する
 ・game.html と download/game.html の更新履歴を更新する

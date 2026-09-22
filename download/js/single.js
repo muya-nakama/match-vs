@@ -25,7 +25,9 @@
 
       try {
         battleLoadAttempt++;
-        const suffix = isRetry ? `?retry=${battleLoadAttempt}` : "";
+        const suffix = isRetry
+          ? `?v=2.77.0&retry=${battleLoadAttempt}`
+          : "?v=2.77.0";
         // トップ表示中から裏で読み込み、シングル開始・対戦開始時の端末差を抑える。
         battleGameFrame.src = `game.html${suffix}`;
         battleLoadTimer = setTimeout(() => {
