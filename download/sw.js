@@ -1,4 +1,4 @@
-const CACHE_NAME = "meteor-striker-download-2.75.0";
+const CACHE_NAME = "meteor-striker-download-2.76.0";
 const APP_FILES = [
   "./",
   "./index.html",
